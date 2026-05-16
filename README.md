@@ -25,12 +25,14 @@ If you copy a **single** plugin into its own repository, run `npm install` in th
 
 `@kosolapus/plugin-ts-sdk` берётся с **npm** (в lockfile зафиксирован `0.0.6`), локальный каталог `sdk/` в монорепе для сборки плагинов **не нужен**.
 
+При стеке в **одной Docker-сети** с plugin-manager: по умолчанию `PLUGIN_MANAGER_RPC_HOST=plugin-manager`, порт **`3000`** (не опубликованный с хоста `4016`); control plane: `runtime-control-plane`:**`3001`**. В манифесте `pull` используется **имя сервиса** каждого плагина (`PLUGIN_PULL_ADVERTISED_HOST`, переопределяется per-service env при необходимости).
+
 ```bash
 cd plugins
 docker compose --env-file ../backend/.env up -d --build
 ```
 
-На удалённой машине выставьте в `.env` реальные хосты вместо `host.docker.internal` (на Linux его по умолчанию нет): как минимум `PLUGIN_MANAGER_RPC_HOST`, `CONTROL_PLANE_TCP_HOST`, при необходимости `PLUGIN_PULL_ADVERTISED_HOST`, чтобы plugin-manager и control plane достигали контейнеров по сети. Частый вариант — одна пользовательская Docker-сеть с основным стеком и `external: true` (см. комментарий в конце `docker-compose.yml`).
+На удалённой машине без общей сети задайте в `.env` реальные хосты/порты для PM и CP (как при доступе с хоста — например `4016`/`4021` или `host.docker.internal`).
 
 Отдельный образ одного плагина:
 
@@ -60,11 +62,10 @@ docker build -f Dockerfile.plugin --build-arg PLUGIN_DIR=telegram -t plugin-tele
 
 ---
 
-- **Publication + batch pull**: `PluginPublicationTcpHostModule.forRoot(Source)` listens for PM → plugin `executor_batch_pull` on the Nest TCP ingress (telegram: `EXECUTOR_TCP_PORT` / `PORT`; see each plugin). In `manifestBuilder`, **`pull`** must advertise an address reachable **from plugin-manager** (optional env `PLUGIN_PULL_ADVERTISED_HOST` / `_PORT`).
+- **Publication + batch pull**: `PluginPublicationTcpHostModule.forRoot(Source)` слушает PM → plugin `executor_batch_pull` по TCP (`PLUGIN_TCP_PORT` / `EXECUTOR_TCP_PORT` / `PORT`). В манифесте **`pull`** должен быть достижим **из** plugin-manager (`PLUGIN_PULL_ADVERTISED_HOST` / `_PORT`).
 - **Manifest on startup (optional)**: second argument `{ manifestOnInit: true, manifestBuilder: YourBuilderClass }` — one burst of `manifest_request_v2` to plugin-manager from `PluginManifestSendOnInitService` (`PLUGIN_MANAGER_RPC_HOST`, `PLUGIN_MANAGER_RPC_PORT`, `PLUGIN_MANAGER_INGRESS_TOKEN`; retries via `PLUGIN_MANAGER_MANIFEST_ON_INIT_*`).
-- **email** — как **telegram**: `executor.task` + `TcpControlPlaneOutputRouter`, step-ack через `buildExecutorStepAckNotifierFromEnv` (переменные TCP к CP как в платформе: `PLUGIN_CONTROL_PLANE_KEY`, `CONTROL_PLANE_TCP_HOST`, `RUNTIME_CONTROL_PLANE_TCP_PORT`).
-- **telegram** — TCP host for publication batch pull; **`npm run start:dev`** rebuild + restart pattern. Requires **`@nestjs/platform-express`** with `NestFactory.create` when HTTP health is enabled.
-- **jira**, **redmine**, **consensus**, **llm**, **wildberries**, **ozon**, **telegram**, **office** — publication-batch pattern (`main.ts`, `PluginPublicationTcpHostModule`, `*PublicationBatchSource`, executors registry).
+- **email** и остальные с control plane: `executor.task` + `TcpControlPlaneOutputRouter`, step-ack через `buildExecutorStepAckNotifierFromEnv` (`PLUGIN_CONTROL_PLANE_KEY`, `CONTROL_PLANE_TCP_HOST`, `RUNTIME_CONTROL_PLANE_TCP_PORT`).
+- **jira**, **redmine**, **consensus**, **llm**, **wildberries**, **ozon**, **telegram**, **office** — один паттерн: `bootstrapPluginExecutorMicroservice`, `PluginPublicationTcpHostModule`, `*PublicationBatchSource`, `ExecutorTaskTcpController`. Отдельный compose у telegram удалён — только `plugins/docker-compose.yml`, сервис `telegram`. Опциональный `GET /health`: задать `PLUGIN_HEALTH_HTTP_PORT` и порт в compose (нужен `@nestjs/platform-express`).
 
 Default `PLUGIN_TCP_PORT` per package (override via env): **telegram 9400**, **jira 9401**, **redmine 9402**, **consensus 9403**, **llm 9404**, **wildberries 9405**, **ozon 9406**, **email 9410**, **office 9411**.
 

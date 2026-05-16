@@ -1,29 +1,30 @@
 # Запуск и сборка всего набора плагинов из одного файла.
 #
-# Из каталога plugins/ (контекст сборки — этот каталог; SDK с npm, см. package-lock.json):
+# Из каталога plugins/:
 #   docker compose --env-file ../backend/.env up -d --build
 #
-# Образы собираются в Dockerfile.plugin (multi-stage: npm ci в workspace + build), dist на хосте не нужен.
+# Образы: Dockerfile.plugin (multi-stage), dist на хосте не нужен.
+#
+# Рекомендуется одна user-defined сеть с plugin-manager и runtime-control-plane.
+# Внутри сети PM слушает :3000, CP (ingress) — :3001 (не хостовые 4016/4021).
+# В манифесте pull.host = DNS-имя сервиса плагина (см. PLUGIN_PULL_ADVERTISED_HOST у каждого сервиса).
+# Если PM/CP крутятся на хосте — переопределите PLUGIN_MANAGER_RPC_* и CONTROL_PLANE_* в .env.
+#
+# Опционально для любого плагина: PLUGIN_HEALTH_HTTP_PORT и второй ports: — HTTP GET /health (NestFactory + express).
 
 name: auto-flow-plugins
 
 x-plugin-env: &plugin-env
-  PLUGIN_PULL_ADVERTISED_HOST: ${PLUGIN_PULL_ADVERTISED_HOST:-host.docker.internal}
-  CONTROL_PLANE_TCP_HOST: ${CONTROL_PLANE_TCP_HOST:-host.docker.internal}
-  RUNTIME_CONTROL_PLANE_TCP_PORT: ${RUNTIME_CONTROL_PLANE_TCP_PORT:-4021}
+  CONTROL_PLANE_TCP_HOST: ${CONTROL_PLANE_TCP_HOST:-runtime-control-plane}
+  RUNTIME_CONTROL_PLANE_TCP_PORT: ${RUNTIME_CONTROL_PLANE_TCP_PORT:-3001}
   DISABLE_RUNTIME_STEP_ACK: ${DISABLE_RUNTIME_STEP_ACK:-false}
   PLUGIN_MANAGER_INGRESS_TOKEN: ${PLUGIN_MANAGER_INGRESS_TOKEN:-key}
   PLUGIN_CONTROL_PLANE_KEY: ${PLUGIN_CONTROL_PLANE_KEY:-key}
-  PLUGIN_MANAGER_RPC_HOST: ${PLUGIN_MANAGER_RPC_HOST:-host.docker.internal}
-  PLUGIN_MANAGER_RPC_PORT: ${PLUGIN_MANAGER_RPC_PORT:-4016}
-
-x-plugin-hosts: &plugin-hosts
-  extra_hosts:
-    - 'host.docker.internal:host-gateway'
+  PLUGIN_MANAGER_RPC_HOST: ${PLUGIN_MANAGER_RPC_HOST:-plugin-manager}
+  PLUGIN_MANAGER_RPC_PORT: ${PLUGIN_MANAGER_RPC_PORT:-3000}
 
 services:
   telegram:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -33,16 +34,14 @@ services:
     restart: unless-stopped
     ports:
       - '${TELEGRAM_EXECUTOR_TCP_PORT:-9400}:${TELEGRAM_EXECUTOR_TCP_PORT:-9400}'
-      - '${TELEGRAM_PLUGIN_HEALTH_HTTP_PORT:-9480}:${TELEGRAM_PLUGIN_HEALTH_HTTP_PORT:-9480}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${TELEGRAM_PLUGIN_PULL_ADVERTISED_HOST:-telegram}
       PLUGIN_TCP_PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
       EXECUTOR_TCP_PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
       PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
-      PLUGIN_HEALTH_HTTP_PORT: ${TELEGRAM_PLUGIN_HEALTH_HTTP_PORT:-9480}
 
   jira:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -54,12 +53,12 @@ services:
       - '${JIRA_EXECUTOR_TCP_PORT:-9401}:${JIRA_EXECUTOR_TCP_PORT:-9401}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${JIRA_PLUGIN_PULL_ADVERTISED_HOST:-jira}
       PLUGIN_TCP_PORT: ${JIRA_EXECUTOR_TCP_PORT:-9401}
       EXECUTOR_TCP_PORT: ${JIRA_EXECUTOR_TCP_PORT:-9401}
       PORT: ${JIRA_EXECUTOR_TCP_PORT:-9401}
 
   redmine:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -71,12 +70,12 @@ services:
       - '${REDMINE_EXECUTOR_TCP_PORT:-9402}:${REDMINE_EXECUTOR_TCP_PORT:-9402}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${REDMINE_PLUGIN_PULL_ADVERTISED_HOST:-redmine}
       PLUGIN_TCP_PORT: ${REDMINE_EXECUTOR_TCP_PORT:-9402}
       EXECUTOR_TCP_PORT: ${REDMINE_EXECUTOR_TCP_PORT:-9402}
       PORT: ${REDMINE_EXECUTOR_TCP_PORT:-9402}
 
   llm:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -88,12 +87,12 @@ services:
       - '${LLM_EXECUTOR_TCP_PORT:-9404}:${LLM_EXECUTOR_TCP_PORT:-9404}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${LLM_PLUGIN_PULL_ADVERTISED_HOST:-llm}
       PLUGIN_TCP_PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
       EXECUTOR_TCP_PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
       PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
 
   wildberries:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -105,12 +104,12 @@ services:
       - '${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}:${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${WILDBERRIES_PLUGIN_PULL_ADVERTISED_HOST:-wildberries}
       PLUGIN_TCP_PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
       EXECUTOR_TCP_PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
       PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
 
   ozon:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -122,12 +121,12 @@ services:
       - '${OZON_EXECUTOR_TCP_PORT:-9406}:${OZON_EXECUTOR_TCP_PORT:-9406}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${OZON_PLUGIN_PULL_ADVERTISED_HOST:-ozon}
       PLUGIN_TCP_PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
       EXECUTOR_TCP_PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
       PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
 
   email:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -139,12 +138,12 @@ services:
       - '${EMAIL_EXECUTOR_TCP_PORT:-9410}:${EMAIL_EXECUTOR_TCP_PORT:-9410}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${EMAIL_PLUGIN_PULL_ADVERTISED_HOST:-email}
       PLUGIN_TCP_PORT: ${EMAIL_EXECUTOR_TCP_PORT:-9410}
       EXECUTOR_TCP_PORT: ${EMAIL_EXECUTOR_TCP_PORT:-9410}
       PORT: ${EMAIL_EXECUTOR_TCP_PORT:-9410}
 
   office:
-    <<: *plugin-hosts
     build:
       context: .
       dockerfile: Dockerfile.plugin
@@ -156,11 +155,12 @@ services:
       - '${OFFICE_EXECUTOR_TCP_PORT:-9411}:${OFFICE_EXECUTOR_TCP_PORT:-9411}'
     environment:
       <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${OFFICE_PLUGIN_PULL_ADVERTISED_HOST:-office}
       PLUGIN_TCP_PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
       EXECUTOR_TCP_PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
       PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
 
-# На удалённом сервере, если основной стек уже создал сеть (например flowforge):
+# Подключение к уже существующей сети стека (тот же network name, что у plugin-manager / runtime-control-plane):
 # networks:
 #   default:
 #     name: flowforge

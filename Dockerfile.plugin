@@ -21,7 +21,7 @@ FROM node:24-alpine
 ARG PLUGIN_DIR
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PLUGIN_MANAGER_RPC_PORT=4016
+ENV PLUGIN_MANAGER_RPC_PORT=3000
 
 COPY --from=build /src/${PLUGIN_DIR}/dist/run.cjs ./run.cjs
 COPY --from=build /src/${PLUGIN_DIR}/dist/help.md ./help.md
