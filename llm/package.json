@@ -1,0 +1,51 @@
+{
+  "name": "@flowforge/plugin-llm",
+  "version": "0.0.1",
+  "description": "Flowforge plugin: LLM / Hugging Face inference",
+  "private": false,
+  "main": "dist/run.cjs",
+  "files": ["dist/run.cjs", "dist/help.md", "package.json"],
+  "flowforgePluginBuild": {
+    "helpMarkdown": { "distRelativePath": "ollama/generate/help.md" },
+    "bundleMarkdownAsText": false
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "copy:help": "node ../node_modules/@kosolapus/plugin-ts-sdk/scripts/copy-executor-help-md.cjs src dist",
+    "bundle": "node ../node_modules/@flowforge/plugin-build-tools/scripts/bundle.mjs",
+    "prune:dist": "node ../node_modules/@flowforge/plugin-build-tools/scripts/prune-dist.mjs",
+    "build": "tsc -p tsconfig.json && npm run copy:help && npm run bundle && npm run prune:dist",
+    "start": "node dist/run.cjs",
+    "start:dev": "nodemon"
+  },
+  "dependencies": {
+    "@kosolapus/plugin-ts-sdk": "0.0.6",
+    "@huggingface/inference": "^4.13.12",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/microservices": "^11.1.12",
+    "@nestjs/platform-express": "^11.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@flowforge/plugin-build-tools": "0.0.1",
+    "@types/node": "^22.10.0",
+    "nodemon": "^3.1.9",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "nodemonConfig": {
+    "watch": ["src"],
+    "ext": "ts,md,json",
+    "ignore": ["src/**/*.spec.ts"],
+    "delay": "500",
+    "exec": "npm run build && node dist/run.cjs"
+  }
+}

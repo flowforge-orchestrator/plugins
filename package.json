@@ -1,0 +1,26 @@
+{
+  "name": "@flowforge/plugins-workspace",
+  "private": true,
+  "description": "Flowforge external plugin processes (workspace root)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "plugin-build-tools",
+    "office",
+    "email",
+    "telegram",
+    "jira",
+    "redmine",
+    "llm",
+    "wildberries",
+    "ozon"
+  ],
+  "overrides": {
+    "@kosolapus/plugin-ts-sdk": "0.0.6"
+  },
+  "scripts": {
+    "build:all": "npm run build --workspaces --if-present"
+  }
+}

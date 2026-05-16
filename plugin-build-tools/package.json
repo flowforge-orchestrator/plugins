@@ -1,0 +1,20 @@
+{
+  "name": "@flowforge/plugin-build-tools",
+  "version": "0.0.1",
+  "private": false,
+  "description": "Shared esbuild bundle and dist pruning scripts for Flowforge TypeScript plugins",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "flowforge-plugin-bundle": "./scripts/bundle.mjs",
+    "flowforge-plugin-prune-dist": "./scripts/prune-dist.mjs"
+  },
+  "files": ["scripts"],
+  "scripts": {},
+  "dependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

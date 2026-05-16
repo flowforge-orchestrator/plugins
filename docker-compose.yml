@@ -1,0 +1,168 @@
+# Запуск и сборка всего набора плагинов из одного файла.
+#
+# Из каталога plugins/ (контекст сборки — этот каталог; SDK с npm, см. package-lock.json):
+#   docker compose --env-file ../backend/.env up -d --build
+#
+# Образы собираются в Dockerfile.plugin (multi-stage: npm ci в workspace + build), dist на хосте не нужен.
+
+name: auto-flow-plugins
+
+x-plugin-env: &plugin-env
+  PLUGIN_PULL_ADVERTISED_HOST: ${PLUGIN_PULL_ADVERTISED_HOST:-host.docker.internal}
+  CONTROL_PLANE_TCP_HOST: ${CONTROL_PLANE_TCP_HOST:-host.docker.internal}
+  RUNTIME_CONTROL_PLANE_TCP_PORT: ${RUNTIME_CONTROL_PLANE_TCP_PORT:-4021}
+  DISABLE_RUNTIME_STEP_ACK: ${DISABLE_RUNTIME_STEP_ACK:-false}
+  PLUGIN_MANAGER_INGRESS_TOKEN: ${PLUGIN_MANAGER_INGRESS_TOKEN:-key}
+  PLUGIN_CONTROL_PLANE_KEY: ${PLUGIN_CONTROL_PLANE_KEY:-key}
+  PLUGIN_MANAGER_RPC_HOST: ${PLUGIN_MANAGER_RPC_HOST:-host.docker.internal}
+  PLUGIN_MANAGER_RPC_PORT: ${PLUGIN_MANAGER_RPC_PORT:-4016}
+
+x-plugin-hosts: &plugin-hosts
+  extra_hosts:
+    - 'host.docker.internal:host-gateway'
+
+services:
+  telegram:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: telegram
+    image: ${TELEGRAM_PLUGIN_IMAGE:-plugin-telegram:latest}
+    restart: unless-stopped
+    ports:
+      - '${TELEGRAM_EXECUTOR_TCP_PORT:-9400}:${TELEGRAM_EXECUTOR_TCP_PORT:-9400}'
+      - '${TELEGRAM_PLUGIN_HEALTH_HTTP_PORT:-9480}:${TELEGRAM_PLUGIN_HEALTH_HTTP_PORT:-9480}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
+      EXECUTOR_TCP_PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
+      PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
+      PLUGIN_HEALTH_HTTP_PORT: ${TELEGRAM_PLUGIN_HEALTH_HTTP_PORT:-9480}
+
+  jira:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: jira
+    image: ${JIRA_PLUGIN_IMAGE:-plugin-jira:latest}
+    restart: unless-stopped
+    ports:
+      - '${JIRA_EXECUTOR_TCP_PORT:-9401}:${JIRA_EXECUTOR_TCP_PORT:-9401}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${JIRA_EXECUTOR_TCP_PORT:-9401}
+      EXECUTOR_TCP_PORT: ${JIRA_EXECUTOR_TCP_PORT:-9401}
+      PORT: ${JIRA_EXECUTOR_TCP_PORT:-9401}
+
+  redmine:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: redmine
+    image: ${REDMINE_PLUGIN_IMAGE:-plugin-redmine:latest}
+    restart: unless-stopped
+    ports:
+      - '${REDMINE_EXECUTOR_TCP_PORT:-9402}:${REDMINE_EXECUTOR_TCP_PORT:-9402}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${REDMINE_EXECUTOR_TCP_PORT:-9402}
+      EXECUTOR_TCP_PORT: ${REDMINE_EXECUTOR_TCP_PORT:-9402}
+      PORT: ${REDMINE_EXECUTOR_TCP_PORT:-9402}
+
+  llm:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: llm
+    image: ${LLM_PLUGIN_IMAGE:-plugin-llm:latest}
+    restart: unless-stopped
+    ports:
+      - '${LLM_EXECUTOR_TCP_PORT:-9404}:${LLM_EXECUTOR_TCP_PORT:-9404}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
+      EXECUTOR_TCP_PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
+      PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
+
+  wildberries:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: wildberries
+    image: ${WILDBERRIES_PLUGIN_IMAGE:-plugin-wildberries:latest}
+    restart: unless-stopped
+    ports:
+      - '${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}:${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
+      EXECUTOR_TCP_PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
+      PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
+
+  ozon:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: ozon
+    image: ${OZON_PLUGIN_IMAGE:-plugin-ozon:latest}
+    restart: unless-stopped
+    ports:
+      - '${OZON_EXECUTOR_TCP_PORT:-9406}:${OZON_EXECUTOR_TCP_PORT:-9406}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
+      EXECUTOR_TCP_PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
+      PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
+
+  email:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: email
+    image: ${EMAIL_PLUGIN_IMAGE:-plugin-email:latest}
+    restart: unless-stopped
+    ports:
+      - '${EMAIL_EXECUTOR_TCP_PORT:-9410}:${EMAIL_EXECUTOR_TCP_PORT:-9410}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${EMAIL_EXECUTOR_TCP_PORT:-9410}
+      EXECUTOR_TCP_PORT: ${EMAIL_EXECUTOR_TCP_PORT:-9410}
+      PORT: ${EMAIL_EXECUTOR_TCP_PORT:-9410}
+
+  office:
+    <<: *plugin-hosts
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: office
+    image: ${OFFICE_PLUGIN_IMAGE:-plugin-office:latest}
+    restart: unless-stopped
+    ports:
+      - '${OFFICE_EXECUTOR_TCP_PORT:-9411}:${OFFICE_EXECUTOR_TCP_PORT:-9411}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_TCP_PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
+      EXECUTOR_TCP_PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
+      PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
+
+# На удалённом сервере, если основной стек уже создал сеть (например flowforge):
+# networks:
+#   default:
+#     name: flowforge
+#     external: true
+
