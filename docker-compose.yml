@@ -92,40 +92,6 @@ services:
       EXECUTOR_TCP_PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
       PORT: ${LLM_EXECUTOR_TCP_PORT:-9404}
 
-  wildberries:
-    build:
-      context: .
-      dockerfile: Dockerfile.plugin
-      args:
-        PLUGIN_DIR: wildberries
-    image: ${WILDBERRIES_PLUGIN_IMAGE:-plugin-wildberries:latest}
-    restart: unless-stopped
-    ports:
-      - '${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}:${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}'
-    environment:
-      <<: *plugin-env
-      PLUGIN_PULL_ADVERTISED_HOST: ${WILDBERRIES_PLUGIN_PULL_ADVERTISED_HOST:-wildberries}
-      PLUGIN_TCP_PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
-      EXECUTOR_TCP_PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
-      PORT: ${WILDBERRIES_EXECUTOR_TCP_PORT:-9405}
-
-  ozon:
-    build:
-      context: .
-      dockerfile: Dockerfile.plugin
-      args:
-        PLUGIN_DIR: ozon
-    image: ${OZON_PLUGIN_IMAGE:-plugin-ozon:latest}
-    restart: unless-stopped
-    ports:
-      - '${OZON_EXECUTOR_TCP_PORT:-9406}:${OZON_EXECUTOR_TCP_PORT:-9406}'
-    environment:
-      <<: *plugin-env
-      PLUGIN_PULL_ADVERTISED_HOST: ${OZON_PLUGIN_PULL_ADVERTISED_HOST:-ozon}
-      PLUGIN_TCP_PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
-      EXECUTOR_TCP_PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
-      PORT: ${OZON_EXECUTOR_TCP_PORT:-9406}
-
   email:
     build:
       context: .

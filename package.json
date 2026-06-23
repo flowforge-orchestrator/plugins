@@ -13,9 +13,7 @@
     "telegram",
     "jira",
     "redmine",
-    "llm",
-    "wildberries",
-    "ozon"
+    "llm"
   ],
   "overrides": {
     "@kosolapus/plugin-ts-sdk": "0.0.6"

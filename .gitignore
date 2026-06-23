@@ -2,3 +2,9 @@ dist/
 node_modules/
 .idea
 .env
+
+# Private / local-only plugins (not in repo; keep copies outside git)
+ozon/
+wildberries/
+macos-notify/
+harness/

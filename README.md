@@ -1,8 +1,10 @@
 # External plugin applications
 
-Each subdirectory is one deployable plugin process (`plugins/<name>`), depending on **`@kosolapus/plugin-ts-sdk` from npm** (pinned `0.0.6`; root `overrides` keeps the workspace on that version).
+Each subdirectory is one deployable plugin process (`plugins/<name>`), depending on **`@kosolapus/plugin-ts-sdk` from npm** (pinned in root `overrides`).
 
-Shared **esbuild** bundle and **prune `dist`** live in **`plugin-build-tools/`** (`@flowforge/plugin-build-tools`). Plugin-specific behaviour is declared in each package via `flowforgePluginBuild` (see below).
+**Private plugins (не в git):** каталоги `ozon/`, `wildberries/`, `macos-notify/`, `harness/` — в [`.gitignore`](.gitignore). Держите локально или в отдельном private repo; в `package.json` workspaces и `docker-compose.yml` их нет.
+
+Shared **esbuild** bundle and **prune `dist`** live in **`plugin-build-tools/`** (`@flowforge/plugin-build-tools`).
 
 ## Monorepo / workspace
 
@@ -65,8 +67,12 @@ docker build -f Dockerfile.plugin --build-arg PLUGIN_DIR=telegram -t plugin-tele
 - **Publication + batch pull**: `PluginPublicationTcpHostModule.forRoot(Source)` слушает PM → plugin `executor_batch_pull` по TCP (`PLUGIN_TCP_PORT` / `EXECUTOR_TCP_PORT` / `PORT`). В манифесте **`pull`** должен быть достижим **из** plugin-manager (`PLUGIN_PULL_ADVERTISED_HOST` / `_PORT`).
 - **Manifest on startup (optional)**: second argument `{ manifestOnInit: true, manifestBuilder: YourBuilderClass }` — one burst of `manifest_request_v2` to plugin-manager from `PluginManifestSendOnInitService` (`PLUGIN_MANAGER_RPC_HOST`, `PLUGIN_MANAGER_RPC_PORT`, `PLUGIN_MANAGER_INGRESS_TOKEN`; retries via `PLUGIN_MANAGER_MANIFEST_ON_INIT_*`).
 - **email** и остальные с control plane: `executor.task` + `TcpControlPlaneOutputRouter`, step-ack через `buildExecutorStepAckNotifierFromEnv` (`PLUGIN_CONTROL_PLANE_KEY`, `CONTROL_PLANE_TCP_HOST`, `RUNTIME_CONTROL_PLANE_TCP_PORT`).
-- **jira**, **redmine**, **consensus**, **llm**, **wildberries**, **ozon**, **telegram**, **office** — один паттерн: `bootstrapPluginExecutorMicroservice`, `PluginPublicationTcpHostModule`, `*PublicationBatchSource`, `ExecutorTaskTcpController`. Отдельный compose у telegram удалён — только `plugins/docker-compose.yml`, сервис `telegram`. Опциональный `GET /health`: задать `PLUGIN_HEALTH_HTTP_PORT` и порт в compose (нужен `@nestjs/platform-express`).
+- **jira**, **redmine**, **llm**, **telegram**, **office**, **email** — один паттерн: `bootstrapPluginExecutorMicroservice`, `PluginPublicationTcpHostModule`, `*PublicationBatchSource`, `ExecutorTaskTcpController`.
 
-Default `PLUGIN_TCP_PORT` per package (override via env): **telegram 9400**, **jira 9401**, **redmine 9402**, **consensus 9403**, **llm 9404**, **wildberries 9405**, **ozon 9406**, **email 9410**, **office 9411**.
+Default `PLUGIN_TCP_PORT` per package (override via env): **telegram 9400**, **jira 9401**, **redmine 9402**, **llm 9404**, **email 9410**, **office 9411**. Порты 9405–9407, 9412 — зарезервированы под private-плагины из `.gitignore`.
 
 Manifest `pull.host`/`pull.port` must be reachable **from plugin-manager** (advertise host/port accordingly in Docker/network).
+
+### История git: private-плагины уже вычищены
+
+Если клон старый и каталоги снова появились — они не должны коммититься (`.gitignore`). Повторная очистка истории: [`scripts/purge-private-plugins-from-git-history.sh`](scripts/purge-private-plugins-from-git-history.sh) (требует `git-filter-repo`, затем **force-push**).
