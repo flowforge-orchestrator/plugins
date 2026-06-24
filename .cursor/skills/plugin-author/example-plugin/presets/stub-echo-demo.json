@@ -1,0 +1,39 @@
+{
+  "id": "example-echo-demo",
+  "version": 1,
+  "metadata": {
+    "name": "Example: echo demo",
+    "description": "Minimal diagram with plugin.example.echo — preset-service reference."
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "Echo demo",
+        "description": "Manual → echo",
+        "triggers": [{ "type": "manual" }],
+        "isActive": false
+      },
+      "widgets": [
+        {
+          "id": "w-echo",
+          "label": "Echo",
+          "source": {
+            "nodeType": "plugin.example.echo",
+            "label": "Example echo"
+          },
+          "config": [
+            {
+              "name": "text",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "isPrimary": true,
+              "defaultValue": "hello"
+            }
+          ]
+        }
+      ],
+      "edges": []
+    }
+  ]
+}

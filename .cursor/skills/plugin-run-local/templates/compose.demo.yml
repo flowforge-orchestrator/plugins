@@ -1,0 +1,71 @@
+# Snippet-only: copy `myplugin` into repo compose.demo.yml (do not run from this directory).
+# Runnable stack: repository root — compose.demo.yml + compose.env.example.
+# See templates/README.md and plugin-run-local/SKILL.md.
+
+name: conveyor-plugin-demo
+
+x-plugin-to-demo: &plugin-to-demo
+  CONTROL_PLANE_TCP_HOST: demo
+  RUNTIME_CONTROL_PLANE_TCP_PORT: ${DEMO_CP_TCP_PORT:-4021}
+  PLUGIN_MANAGER_RPC_HOST: demo
+  PLUGIN_MANAGER_RPC_PORT: ${DEMO_PM_TCP_PORT:-4016}
+  PLUGIN_CONTROL_PLANE_KEY: ${PLUGIN_CONTROL_PLANE_KEY:-demo-internal-key}
+  PLUGIN_MANAGER_INGRESS_TOKEN: ${PLUGIN_MANAGER_INGRESS_TOKEN:-demo-plugin-ingress}
+  DISABLE_RUNTIME_STEP_ACK: ${DISABLE_RUNTIME_STEP_ACK:-false}
+
+services:
+  demo:
+    image: ${DEMO_IMAGE_REF:-kosolapus/conveyor-demo:latest}
+    restart: unless-stopped
+    ports:
+      - '${DEMO_WEB_PORT:-8080}:8080'
+      - '${DEMO_CP_HTTP_PORT:-4020}:4020'
+      - '${DEMO_CP_TCP_PORT:-4021}:4021'
+      - '${DEMO_PM_TCP_PORT:-4016}:4016'
+      - '${DEMO_PM_HEALTH_PORT:-4017}:4017'
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-demo-jwt-insecure-change-me}
+      PLUGIN_CONTROL_PLANE_KEY: ${PLUGIN_CONTROL_PLANE_KEY:-demo-internal-key}
+      PLUGIN_MANAGER_INGRESS_TOKEN: ${PLUGIN_MANAGER_INGRESS_TOKEN:-demo-plugin-ingress}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:8080}
+      TARIFF_DEMO_ENABLED: ${TARIFF_DEMO_ENABLED:-true}
+      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-Test123456!}
+      DEMO_SEED_USERS: ${DEMO_SEED_USERS:-true}
+    volumes:
+      - demo_pgdata:/var/lib/postgresql/data
+      - demo_files:/data/files
+      - demo_workspace:/data/run-workspace
+      - demo_vault:/data/vault
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://127.0.0.1:4017/health >/dev/null || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 90s
+
+  myplugin:
+    build:
+      context: ${PLUGIN_BUILD_CONTEXT:-.}
+      dockerfile: ${PLUGIN_DOCKERFILE:-Dockerfile.plugin}
+      args:
+        PLUGIN_DIR: ${PLUGIN_DIR:-myplugin}
+    restart: unless-stopped
+    depends_on:
+      demo:
+        condition: service_healthy
+    ports:
+      - '${MYPLUGIN_EXECUTOR_PORT:-9409}:${MYPLUGIN_EXECUTOR_PORT:-9409}'
+    environment:
+      <<: *plugin-to-demo
+      PLUGIN_PULL_ADVERTISED_HOST: ${MYPLUGIN_PULL_HOST:-myplugin}
+      PLUGIN_TCP_PORT: ${MYPLUGIN_EXECUTOR_PORT:-9409}
+      EXECUTOR_TCP_PORT: ${MYPLUGIN_EXECUTOR_PORT:-9409}
+      PORT: ${MYPLUGIN_EXECUTOR_PORT:-9409}
+      PLUGIN_HEALTH_HTTP_PORT: ${MYPLUGIN_HEALTH_PORT:-}
+
+volumes:
+  demo_pgdata:
+  demo_files:
+  demo_workspace:
+  demo_vault:

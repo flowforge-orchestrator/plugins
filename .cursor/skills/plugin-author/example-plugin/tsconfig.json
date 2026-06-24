@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2023",
+    "outDir": "dist",
+    "rootDir": "src",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@kosolapus/plugin-ts-sdk": [
+        "../../../../node_modules/@kosolapus/plugin-ts-sdk"
+      ]
+    }
+  },
+  "include": ["src/**/*"]
+}

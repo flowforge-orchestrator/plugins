@@ -1,0 +1,40 @@
+{
+  "name": "@conveyor/plugin-author-example",
+  "version": "0.0.0",
+  "description": "Conveyor plugin author reference (not published, not in workspace)",
+  "private": true,
+  "main": "dist/run.cjs",
+  "conveyorPluginBuild": {
+    "helpMarkdown": "firstInDist",
+    "bundleMarkdownAsText": false
+  },
+  "scripts": {
+    "copy:help": "node ../../../../node_modules/@kosolapus/plugin-ts-sdk/scripts/copy-executor-help-md.cjs src dist",
+    "bundle": "node ../../../../node_modules/@conveyor/plugin-build-tools/scripts/bundle.mjs",
+    "prune:dist": "node ../../../../node_modules/@conveyor/plugin-build-tools/scripts/prune-dist.mjs",
+    "build": "tsc -p tsconfig.json && npm run copy:help && npm run bundle && npm run prune:dist",
+    "start": "node dist/run.cjs",
+    "test": "node ../../../../node_modules/jest/bin/jest.js --config jest.config.cjs"
+  },
+  "dependencies": {
+    "@kosolapus/plugin-ts-sdk": "0.0.9",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/microservices": "^11.1.12",
+    "@nestjs/platform-express": "^11.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

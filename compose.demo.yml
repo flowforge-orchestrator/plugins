@@ -1,0 +1,156 @@
+# Demo-платформа + плагины из этого репозитория.
+#
+#   docker compose -f compose.demo.yml up -d --build
+#   docker compose -f compose.demo.yml --env-file compose.env.example up -d --build
+#
+# Только ядро без плагинов: docker compose -f compose.demo.yml up -d demo
+
+name: conveyor-plugins-demo
+
+x-plugin-to-demo: &plugin-to-demo
+  CONTROL_PLANE_TCP_HOST: demo
+  RUNTIME_CONTROL_PLANE_TCP_PORT: 4021
+  PLUGIN_MANAGER_RPC_HOST: demo
+  PLUGIN_MANAGER_RPC_PORT: 4016
+  PLUGIN_CONTROL_PLANE_KEY: ${PLUGIN_CONTROL_PLANE_KEY:-demo-internal-key}
+  PLUGIN_MANAGER_INGRESS_TOKEN: ${PLUGIN_MANAGER_INGRESS_TOKEN:-demo-plugin-ingress}
+  DISABLE_RUNTIME_STEP_ACK: ${DISABLE_RUNTIME_STEP_ACK:-false}
+
+services:
+  demo:
+    image: ${DEMO_IMAGE_REF:-kosolapus/conveyor-demo:latest}
+    restart: unless-stopped
+    ports:
+      - '${DEMO_WEB_PORT:-8080}:8080'
+      - '${DEMO_CP_HTTP_PORT:-4020}:4020'
+      - '${DEMO_CP_TCP_PORT:-4021}:4021'
+      - '${DEMO_PM_TCP_PORT:-4016}:4016'
+      - '${DEMO_PM_HEALTH_PORT:-4017}:4017'
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-demo-jwt-insecure-change-me}
+      PLUGIN_CONTROL_PLANE_KEY: ${PLUGIN_CONTROL_PLANE_KEY:-demo-internal-key}
+      PLUGIN_MANAGER_INGRESS_TOKEN: ${PLUGIN_MANAGER_INGRESS_TOKEN:-demo-plugin-ingress}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:8080}
+      TARIFF_DEMO_ENABLED: ${TARIFF_DEMO_ENABLED:-true}
+      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-Test123456!}
+      DEMO_SEED_USERS: ${DEMO_SEED_USERS:-true}
+      DEMO_SEED_EMAIL_ADMIN: ${DEMO_SEED_EMAIL_ADMIN:-admin-test@flowforge.local}
+      DEMO_SEED_EMAIL_FULL: ${DEMO_SEED_EMAIL_FULL:-full-test@flowforge.local}
+      DEMO_SEED_EMAIL_EDITOR: ${DEMO_SEED_EMAIL_EDITOR:-editor-test@flowforge.local}
+      DEMO_SEED_EMAIL_WORKSPACE: ${DEMO_SEED_EMAIL_WORKSPACE:-workspace-test@flowforge.local}
+      DEMO_SEED_EMAIL_UNCONFIRMED: ${DEMO_SEED_EMAIL_UNCONFIRMED:-unconfirmed-full-test@flowforge.local}
+      NUXT_PUBLIC_EDITOR_CONFIG_AGENT_ENABLED: ${DEMO_EDITOR_CONFIG_AGENT_ENABLED:-}
+      NUXT_PUBLIC_EDITOR_CONFIG_USER_MANAGEMENT_ENABLED: ${DEMO_EDITOR_CONFIG_USER_MANAGEMENT_ENABLED:-0}
+      NUXT_PUBLIC_EDITOR_CONFIG_USER_MESSAGE: "${DEMO_EDITOR_CONFIG_USER_MESSAGE:-Демо-образ: не предназначено для production-использования}"
+      NUXT_PUBLIC_EDITOR_CONFIG_USER_MESSAGE_TONE: ${DEMO_EDITOR_CONFIG_USER_MESSAGE_TONE:-warning}
+      DEMO_PLUGIN_HEALTH_INTERVAL_MS: ${DEMO_PLUGIN_HEALTH_INTERVAL_MS:-1200000}
+    volumes:
+      - demo_pgdata:/var/lib/postgresql/data
+      - demo_files:/data/files
+      - demo_workspace:/data/run-workspace
+      - demo_vault:/data/vault
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://127.0.0.1:4017/health >/dev/null || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 90s
+
+  jira:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: jira
+    image: ${DEMO_JIRA_PLUGIN_IMAGE:-conveyor-demo-plugin-jira:local}
+    restart: unless-stopped
+    depends_on:
+      demo:
+        condition: service_healthy
+    ports:
+      - '${DEMO_JIRA_EXECUTOR_PORT:-9401}:${DEMO_JIRA_EXECUTOR_PORT:-9401}'
+    environment:
+      <<: *plugin-to-demo
+      PLUGIN_PULL_ADVERTISED_HOST: ${DEMO_JIRA_PULL_HOST:-jira}
+      PLUGIN_TCP_PORT: ${DEMO_JIRA_EXECUTOR_PORT:-9401}
+      EXECUTOR_TCP_PORT: ${DEMO_JIRA_EXECUTOR_PORT:-9401}
+      PORT: ${DEMO_JIRA_EXECUTOR_PORT:-9401}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS:-30}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS:-2000}
+
+  telegram:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: telegram
+    image: ${DEMO_TELEGRAM_PLUGIN_IMAGE:-conveyor-demo-plugin-telegram:local}
+    restart: unless-stopped
+    depends_on:
+      demo:
+        condition: service_healthy
+    ports:
+      - '${DEMO_TELEGRAM_EXECUTOR_PORT:-9400}:${DEMO_TELEGRAM_EXECUTOR_PORT:-9400}'
+    environment:
+      <<: *plugin-to-demo
+      PLUGIN_PULL_ADVERTISED_HOST: ${DEMO_TELEGRAM_PULL_HOST:-telegram}
+      PLUGIN_TCP_PORT: ${DEMO_TELEGRAM_EXECUTOR_PORT:-9400}
+      EXECUTOR_TCP_PORT: ${DEMO_TELEGRAM_EXECUTOR_PORT:-9400}
+      PORT: ${DEMO_TELEGRAM_EXECUTOR_PORT:-9400}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS:-30}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS:-2000}
+
+  llm:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: llm
+    image: ${DEMO_LLM_PLUGIN_IMAGE:-conveyor-demo-plugin-llm:local}
+    restart: unless-stopped
+    depends_on:
+      demo:
+        condition: service_healthy
+    ports:
+      - '${DEMO_LLM_EXECUTOR_PORT:-9404}:${DEMO_LLM_EXECUTOR_PORT:-9404}'
+    environment:
+      <<: *plugin-to-demo
+      PLUGIN_PULL_ADVERTISED_HOST: ${DEMO_LLM_PULL_HOST:-llm}
+      PLUGIN_TCP_PORT: ${DEMO_LLM_EXECUTOR_PORT:-9404}
+      EXECUTOR_TCP_PORT: ${DEMO_LLM_EXECUTOR_PORT:-9404}
+      PORT: ${DEMO_LLM_EXECUTOR_PORT:-9404}
+      OLLAMA_BASE_URL: ${DEMO_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OPENAI_BASE_URL: ${DEMO_OPENAI_BASE_URL:-https://api.openai.com/v1}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS:-30}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS:-2000}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
+  caldav:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: caldav
+    image: ${DEMO_CALDAV_PLUGIN_IMAGE:-conveyor-demo-plugin-caldav:local}
+    restart: unless-stopped
+    depends_on:
+      demo:
+        condition: service_healthy
+    ports:
+      - '${DEMO_CALDAV_EXECUTOR_PORT:-9413}:${DEMO_CALDAV_EXECUTOR_PORT:-9413}'
+    environment:
+      <<: *plugin-to-demo
+      PLUGIN_PULL_ADVERTISED_HOST: ${DEMO_CALDAV_PULL_HOST:-caldav}
+      PLUGIN_TCP_PORT: ${DEMO_CALDAV_EXECUTOR_PORT:-9413}
+      EXECUTOR_TCP_PORT: ${DEMO_CALDAV_EXECUTOR_PORT:-9413}
+      PORT: ${DEMO_CALDAV_EXECUTOR_PORT:-9413}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS:-30}
+      PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS:-2000}
+
+volumes:
+  demo_pgdata:
+  demo_files:
+  demo_workspace:
+  demo_vault:
