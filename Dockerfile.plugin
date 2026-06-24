@@ -1,12 +1,11 @@
 # Multi-stage: build inside the image (no dist/ on the host required).
 #
-# Build context = directory `plugins/` (this file lives there). `@kosolapus/plugin-ts-sdk`
-# is resolved from npm (see package-lock.json), not from a sibling `sdk/` folder.
+# Build context = repository root (this file and plugin packages live here).
+# @kosolapus/plugin-ts-sdk resolves from npm (package-lock.json).
 #
-# Build manually (from repository root):
-#   docker build -f plugins/Dockerfile.plugin --build-arg PLUGIN_DIR=telegram -t plugin-telegram:latest plugins
+#   docker build -f Dockerfile.plugin --build-arg PLUGIN_DIR=telegram -t plugin-telegram:latest .
 #
-# With plugins/docker-compose.yml, each service uses context: . here.
+# docker-compose services use build.context: .
 
 FROM node:24-alpine AS build
 ARG PLUGIN_DIR
@@ -15,7 +14,7 @@ WORKDIR /src
 COPY . /src
 
 RUN npm ci
-RUN npm run build -w @flowforge/plugin-${PLUGIN_DIR}
+RUN npm run build -w @conveyor/plugin-${PLUGIN_DIR}
 
 FROM node:24-alpine
 ARG PLUGIN_DIR

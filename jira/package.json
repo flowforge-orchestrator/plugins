@@ -1,11 +1,11 @@
 {
-  "name": "@flowforge/plugin-jira",
+  "name": "@conveyor/plugin-jira",
   "version": "0.0.1",
-  "description": "Flowforge plugin: Jira integration",
+  "description": "Conveyor plugin: Jira integration",
   "private": false,
   "main": "dist/run.cjs",
   "files": ["dist/run.cjs", "dist/help.md", "package.json"],
-  "flowforgePluginBuild": {
+  "conveyorPluginBuild": {
     "helpMarkdown": "firstInDist",
     "bundleMarkdownAsText": false
   },
@@ -14,14 +14,14 @@
   },
   "scripts": {
     "copy:help": "node ../node_modules/@kosolapus/plugin-ts-sdk/scripts/copy-executor-help-md.cjs src dist",
-    "bundle": "node ../node_modules/@flowforge/plugin-build-tools/scripts/bundle.mjs",
-    "prune:dist": "node ../node_modules/@flowforge/plugin-build-tools/scripts/prune-dist.mjs",
+    "bundle": "node ../node_modules/@conveyor/plugin-build-tools/scripts/bundle.mjs",
+    "prune:dist": "node ../node_modules/@conveyor/plugin-build-tools/scripts/prune-dist.mjs",
     "build": "tsc -p tsconfig.json && npm run copy:help && npm run bundle && npm run prune:dist",
     "start": "node dist/run.cjs",
     "start:dev": "nodemon"
   },
   "dependencies": {
-    "@kosolapus/plugin-ts-sdk": "0.0.6",
+    "@kosolapus/plugin-ts-sdk": "0.0.9",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/microservices": "^11.1.12",
@@ -32,7 +32,7 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@flowforge/plugin-build-tools": "0.0.1",
+    "@conveyor/plugin-build-tools": "0.0.1",
     "@types/node": "^22.10.0",
     "nodemon": "^3.1.9",
     "typescript": "^5.7.0"

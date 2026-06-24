@@ -1,7 +1,7 @@
 {
-  "name": "@flowforge/plugins-workspace",
+  "name": "@conveyor/plugins-workspace",
   "private": true,
-  "description": "Flowforge external plugin processes (workspace root)",
+  "description": "Conveyor external plugin processes (workspace root)",
   "license": "MIT",
   "engines": {
     "node": ">=22"
@@ -13,12 +13,19 @@
     "telegram",
     "jira",
     "redmine",
-    "llm"
+    "llm",
+    "caldav"
   ],
   "overrides": {
-    "@kosolapus/plugin-ts-sdk": "0.0.6"
+    "@kosolapus/plugin-ts-sdk": "0.0.9"
   },
   "scripts": {
-    "build:all": "npm run build --workspaces --if-present"
+    "build:all": "npm run build --workspaces --if-present",
+    "test:example-plugin": "npm test --prefix .cursor/skills/plugin-author/example-plugin"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5"
   }
 }

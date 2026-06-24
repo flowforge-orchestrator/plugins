@@ -51,14 +51,14 @@ function materializeHelpMarkdown(strategy) {
     return;
   }
   throw new Error(
-    `flowforgePluginBuild.helpMarkdown must be "empty", "firstInDist", or { "distRelativePath": "..." } (got ${JSON.stringify(strategy)})`,
+    `conveyorPluginBuild.helpMarkdown must be "empty", "firstInDist", or { "distRelativePath": "..." } (got ${JSON.stringify(strategy)})`,
   );
 }
 
 const pkg = readPackageJson(root);
-const cfg = pkg.flowforgePluginBuild;
+const cfg = pkg.conveyorPluginBuild;
 if (!cfg?.helpMarkdown) {
-  throw new Error(`Missing flowforgePluginBuild.helpMarkdown in ${join(root, 'package.json')}`);
+  throw new Error(`Missing conveyorPluginBuild.helpMarkdown in ${join(root, 'package.json')}`);
 }
 const helpMarkdown = cfg.helpMarkdown;
 const bundleMarkdownAsText = Boolean(cfg.bundleMarkdownAsText);

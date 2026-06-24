@@ -1,16 +1,16 @@
-# Запуск и сборка всего набора плагинов из одного файла.
+# Запуск и сборка всего набора плагинов (plugin-manager и control plane уже в вашей сети).
 #
-# Из каталога plugins/:
-#   docker compose --env-file ../backend/.env up -d --build
+# Из корня репозитория:
+#   docker compose --env-file compose.env.example up -d --build
 #
 # Образы: Dockerfile.plugin (multi-stage), dist на хосте не нужен.
 #
-# Рекомендуется одна user-defined сеть с plugin-manager и runtime-control-plane.
-# Внутри сети PM слушает :3000, CP (ingress) — :3001 (не хостовые 4016/4021).
-# В манифесте pull.host = DNS-имя сервиса плагина (см. PLUGIN_PULL_ADVERTISED_HOST у каждого сервиса).
-# Если PM/CP крутятся на хосте — переопределите PLUGIN_MANAGER_RPC_* и CONTROL_PLANE_* в .env.
+# Одна user-defined сеть с plugin-manager и runtime-control-plane.
+# Внутри сети PM слушает порт из PLUGIN_MANAGER_RPC_PORT, CP — RUNTIME_CONTROL_PLANE_TCP_PORT (см. compose.env.example).
+# В манифесте pull.host = DNS-имя сервиса плагина (PLUGIN_PULL_ADVERTISED_HOST у каждого сервиса).
+# PM/CP на хосте — переопределите PLUGIN_MANAGER_RPC_* и CONTROL_PLANE_* в .env.
 #
-# Опционально для любого плагина: PLUGIN_HEALTH_HTTP_PORT и второй ports: — HTTP GET /health (NestFactory + express).
+# Опционально: PLUGIN_HEALTH_HTTP_PORT и второй ports: — HTTP GET /assets/:key для staticAssets.
 
 name: auto-flow-plugins
 
@@ -126,9 +126,27 @@ services:
       EXECUTOR_TCP_PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
       PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
 
-# Подключение к уже существующей сети стека (тот же network name, что у plugin-manager / runtime-control-plane):
+  caldav:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: caldav
+    image: ${CALDAV_PLUGIN_IMAGE:-plugin-caldav:latest}
+    restart: unless-stopped
+    ports:
+      - '${CALDAV_EXECUTOR_TCP_PORT:-9413}:${CALDAV_EXECUTOR_TCP_PORT:-9413}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${CALDAV_PLUGIN_PULL_ADVERTISED_HOST:-caldav}
+      PLUGIN_TCP_PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
+      EXECUTOR_TCP_PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
+      PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
+
+# Подключение к уже существующей сети (имя = у plugin-manager / runtime-control-plane):
+#
 # networks:
 #   default:
-#     name: flowforge
+#     name: ${COMPOSE_NETWORK_NAME:-conveyor}
 #     external: true
 
