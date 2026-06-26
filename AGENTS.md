@@ -13,4 +13,4 @@ Demo from **repo root**: `docker compose -f compose.demo.yml --env-file compose.
 
 After plugin rebuild: disable+remove in UI (admin) → restart sidecar → enable (workspace user). See [README.md](README.md#обновление-плагина-после-пересборки).
 
-Skill `plugin-run-local` `templates/` — snippet-only; runnable compose is at repo root.
+Skill `plugin-run-local` [`templates/`](.cursor/skills/plugin-run-local/templates/) — фрагменты для copy-paste; runnable compose — в корне репозитория.

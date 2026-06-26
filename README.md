@@ -160,7 +160,7 @@ sequenceDiagram
 | 4. Запуск процесса | Runtime отправляет задачу в control plane | Ядро в demo-образе |
 | 5. Исполнение | CP маршрутизирует задачу на TCP-порт плагина | SDK: `ExecutorTaskTcpController` |
 
-Эталонная цепочка — [`example-plugin/`](.cursor/skills/plugin-author/example-plugin/) в demo.
+Эталон publication wiring — [`example-plugin/`](.cursor/skills/plugin-author/example-plugin/) в этом репозитории.
 
 ## Технические детали
 
