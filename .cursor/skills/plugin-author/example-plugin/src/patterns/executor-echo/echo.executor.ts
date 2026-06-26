@@ -14,7 +14,7 @@ class InputDto {
   @FieldDecorator({
     type: 'string',
     label: 'Text',
-    description: 'Строка для echo',
+    description: 'String to echo',
     isPrimary: true,
     canBePort: true,
     isPort: true,

@@ -55,5 +55,5 @@ try {
 if (!ok) {
   process.exitCode = 1;
 } else {
-  console.info('Validation passed. Register presets on the running platform (preset-service / editor «Пресеты»).');
+  console.info('Validation passed. Register presets on the running platform (preset-service / editor Presets tab).');
 }

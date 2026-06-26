@@ -120,6 +120,18 @@ curl -fsS "http://127.0.0.1:${DEMO_WEB_PORT}/health"
 
 При **`unauthorized`** сверьте `PLUGIN_MANAGER_INGRESS_TOKEN` и `PLUGIN_CONTROL_PLANE_KEY` с [`compose.env.example`](compose.env.example). Если plugin-manager не получает batch, проверьте `PLUGIN_PULL_ADVERTISED_HOST` и порт executor: адрес должен быть достижим из контейнера demo (DNS-имя sidecar-сервиса или `host.docker.internal` с хоста).
 
+## Обновление плагина (после пересборки)
+
+После изменения кода, bump `publicationVersion` или `docker compose build` платформа может продолжать использовать старую публикацию или привязку workspace. Выполните шаги **в этом порядке**:
+
+1. **Отключите и удалите** плагин в UI — вкладка **«Плагины»**, под **учётной записью с правами администратора** (admin workspace / глобальный admin — как принято на вашем стенде).
+2. **Перезапустите** sidecar плагина — например `docker compose restart <service>` или `docker compose up -d --build <service>`.
+3. **Включите** плагин снова — вкладка **«Плагины»**, уже под **нужной рабочей учётной записью** (той, под которой собираете процессы).
+
+Проверка: в логах sidecar — актуальный `publicationVersion`; в plugin-manager — `plugin_publication_committed`; в «Палитре» — узлы плагина, статус **«онлайн»**.
+
+Подробнее для агентов — skill **plugin-run-local** ([`SKILL.md`](.cursor/skills/plugin-run-local/SKILL.md#after-plugin-update-rebuild)).
+
 ## Как плагин стыкуется с платформой
 
 ```mermaid

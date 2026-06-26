@@ -1,6 +1,6 @@
 /**
- * Static UI pattern — merge into manifest builder when intake includes islands/forms.
- * Reference-only: wire AssetHttpModule + vite build in your plugin; see example-plugin patterns.
+ * Static UI pattern — minimal manifest stub.
+ * Full wiring (HTTP module, build-ui, host API): ../custom-ui/
  */
 import type { PluginManifestRequestV2 } from '@kosolapus/plugin-ts-sdk';
 

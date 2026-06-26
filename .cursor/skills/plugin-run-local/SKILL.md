@@ -48,6 +48,16 @@ Snippet reference: [templates/compose.demo.yml](templates/compose.demo.yml) (`my
 
 Health: `DEMO_PM_HEALTH_PORT`, `DEMO_WEB_PORT` in repo `compose.env.example`.
 
+## After plugin update (rebuild)
+
+After code changes, a new `publicationVersion`, or `docker compose build`, the platform may keep an old publication or workspace binding. **Order matters:**
+
+1. **Disable and remove** the plugin in the UI — **Plugins** tab, signed in as a **workspace/global administrator**.
+2. **Restart** the plugin sidecar — e.g. `docker compose restart <service>` or `docker compose up -d --build <service>`.
+3. **Enable** the plugin again — **Plugins** tab, under the **target user account** that edits processes.
+
+Verify: sidecar logs show the new `publicationVersion`; plugin-manager logs show `plugin_publication_committed`; nodes appear in the palette with **online** status.
+
 ## Diagnostics
 
 - **`unauthorized`:** match `PLUGIN_MANAGER_INGRESS_TOKEN`, `PLUGIN_CONTROL_PLANE_KEY` to core

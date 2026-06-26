@@ -11,4 +11,6 @@ Wiring: [example-plugin](.cursor/skills/plugin-author/example-plugin/) (not in w
 
 Demo from **repo root**: `docker compose -f compose.demo.yml --env-file compose.env.example up -d --build`.
 
+After plugin rebuild: disable+remove in UI (admin) → restart sidecar → enable (workspace user). See [README.md](README.md#обновление-плагина-после-пересборки).
+
 Skill `plugin-run-local` `templates/` — snippet-only; runnable compose is at repo root.

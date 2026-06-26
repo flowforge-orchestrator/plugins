@@ -31,3 +31,13 @@ See repo `compose.env.example` + [templates/env.host.example](templates/env.host
 ## Sidecar fragment
 
 See `myplugin` in [templates/compose.demo.yml](templates/compose.demo.yml); prefer copying an existing service from repo `compose.demo.yml`.
+
+## After plugin update (platform UI)
+
+Run after rebuild, `publicationVersion` bump, or manifest/UI bundle changes:
+
+1. **Disable and remove** the plugin — editor **Plugins** tab, **admin** account.
+2. **Restart** the plugin process/container.
+3. **Enable** the plugin — **Plugins** tab, under the **workspace user** who runs the editor.
+
+Skipping step 1 often leaves stale catalog/UI until the old workspace binding is cleared.

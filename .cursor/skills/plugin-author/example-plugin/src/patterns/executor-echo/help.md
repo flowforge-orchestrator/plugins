@@ -1,22 +1,22 @@
 # Echo executor
 
-## Назначение
+## Purpose
 
-Возвращает переданный текст и его длину (после trim) — эталон **нескольких выходов** вместо одного `output`.
+Returns the input text and its length (after trim) — reference for **multiple outputs** instead of a single `output` blob.
 
-## Входы
+## Inputs
 
-| Поле | Тип | Port | Обязательный |
+| Field | Type | Port | Required |
 | --- | --- | --- | --- |
-| text | string | да | да |
+| text | string | yes | yes |
 
-## Выходы
+## Outputs
 
-| Поле | Описание |
+| Field | Description |
 | --- | --- |
-| text | Нормализованная строка |
-| length | Длина в символах |
+| text | Normalized string |
+| length | Character count |
 
-## Пример
+## Example
 
-User input → `plugin.example.echo` → используйте `text` и `length` в следующих узлах.
+User input → `plugin.example.echo` → wire `text` and `length` to downstream nodes.

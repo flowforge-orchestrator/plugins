@@ -2,31 +2,28 @@
 
 Reference tree for **plugin-author**. Copy into target plugin directory.
 
-## Назначение
+## Purpose
 
-Минимальный плагин с одним echo-executor'ом, static UI, widget pattern и preset sync. Используется как шаблон wiring (batch source, manifest builder, AppModule), не входит в workspace `package.json`.
+Minimal plugin with one echo executor, static UI, widget pattern, and preset sync. Template for wiring (batch source, manifest builder, AppModule); not listed in workspace `package.json`.
 
-## Узлы
+## Nodes
 
-| nodeType | Название |
-| --- | --- |
-| `plugin.example.echo` | Example: echo |
+- `plugin.example.echo` — Example: echo
 
-## Для разработчика
+## For developers
 
-| File | Role |
-| --- | --- |
-| `README.md` | Plugin doc (copy structure from [reference.md](reference.md#plugin-readme)) |
-| `src/example-batch.source.ts` | `*PublicationBatchSource` |
-| `src/example-manifest.builder.ts` | `*ManifestBuilder` |
-| `src/app.module.ts` | `PluginPublicationTcpHostModule` + router |
-| `src/patterns/executor-echo/` | executor + help + spec |
-| `src/patterns/static-ui/` | `staticAssets`, `ui.forms` |
-| `src/patterns/widget/` | `requiredTemplateKeys` |
-| `presets/` | preset JSON + `sync-presets.mjs` |
+- `src/example-batch.source.ts` — batch pull
+- `src/example-manifest.builder.ts` — manifest
+- `src/app.module.ts` — Nest wiring
+- `src/patterns/executor-echo/` — executor + help + spec
+- `src/patterns/custom-ui/` — forms, widgets, islands (full cycle)
+- `src/patterns/static-ui/`, `widget/` — stub manifests
+- `presets/` — preset JSON + sync script
 
 ```bash
 npm install && npm run build && npm test
 ```
 
 Root test from repo: `npm run test:example-plugin`.
+
+**After sidecar rebuild:** (1) disable and remove plugin in UI as admin → (2) restart plugin container → (3) enable under the workspace user. See [plugins/README.md](../../../README.md#обновление-плагина-после-пересборки).

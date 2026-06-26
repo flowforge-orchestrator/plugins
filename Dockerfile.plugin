@@ -24,6 +24,11 @@ ENV PLUGIN_MANAGER_RPC_PORT=3000
 
 COPY --from=build /src/${PLUGIN_DIR}/dist/run.cjs ./run.cjs
 COPY --from=build /src/${PLUGIN_DIR}/dist/help.md ./help.md
+# Optional static bundle (e.g. deck-buddy templates/assets)
+COPY --from=build /src/${PLUGIN_DIR}/dist/ /tmp/plugin-dist/
+RUN if [ -d /tmp/plugin-dist/bundled ]; then cp -r /tmp/plugin-dist/bundled ./bundled; fi && \
+    if [ -d /tmp/plugin-dist/ui ]; then cp -r /tmp/plugin-dist/ui ./ui; fi && \
+    rm -rf /tmp/plugin-dist
 
 USER node
 CMD ["node", "run.cjs"]

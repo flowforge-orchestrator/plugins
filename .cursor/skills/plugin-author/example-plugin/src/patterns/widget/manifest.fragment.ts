@@ -1,6 +1,6 @@
 /**
- * Widget pattern — add requiredTemplateKeys on executor + matching staticAssets entry.
- * Reference-only: no production plugin in this repo ships widgets; copy from example-plugin.
+ * Widget pattern — manifest keys only.
+ * Full wiring: ../custom-ui/ (build-ui, PluginAssetHttpModule, canvas host prop).
  */
 export function widgetManifestFragment(): {
   staticAssetKey: string;

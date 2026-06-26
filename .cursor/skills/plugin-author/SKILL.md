@@ -16,8 +16,8 @@ Ask author and record:
 
 - Executors — `nodeType` list
 - Static — `staticAssets` URLs needed?
-- Forms — `ui.forms[]` in workspace?
-- Widgets — `requiredTemplateKeys[]` on nodes?
+- Forms — `ui.forms[]` in workspace? (→ [custom-ui](example-plugin/src/patterns/custom-ui/) if yes)
+- Widgets — `requiredTemplateKeys[]` on nodes? (→ same)
 - Presets — preset-service catalog?
 - Deployment — container sidecar / external core / host process
 
@@ -44,7 +44,7 @@ grep @kosolapus/plugin-ts-sdk example-plugin/package.json
 7. Unit tests: `*.logic.ts` + `*.executor.spec.ts` (see `echo.*`).
 8. `npm run build` and `npm test` in plugin directory.
 
-**Note:** `example-plugin/` is not in workspace `package.json`. Test it with `npm install && npm run build && npm test` inside `example-plugin/`, or `npm run test:example-plugin` from repo root.
+**Note:** `example-plugin/` is not in workspace `package.json`. Test: `npm install && npm run build && npm test` inside `example-plugin/`.
 
 ## Rules
 
@@ -55,8 +55,15 @@ grep @kosolapus/plugin-ts-sdk example-plugin/package.json
 - `executors[]` lists `nodeType` only; transport in `@Executor` + batch pull
 - Secrets: `FieldDecorator` `type: 'ref'` + `secretKind`
 - Publication wiring from example-plugin
-- Static, forms, widgets from example-plugin patterns (`static-ui/`, `widget/`)
+- Static, forms, widgets from [custom-ui/](example-plugin/src/patterns/custom-ui/) (preferred) or legacy stubs in `static-ui/`, `widget/`
 - **`README.md`** in plugin root (purpose, nodes, editor config, developer section)
+- UI bundles: **`export default`** Vue component; build must verify (`build-ui.script.fragment.mjs`)
+
+**Platform limits (plugins that upload files via API):**
+
+- `PAYLOAD_LIMIT` on **api** — max JSON body (`/internal/diagram/.../files` with base64)
+- `FILE_MAX_SIZE_MB` on **file-service** — max stored blob
+- Document both in plugin README; on 413 prefer warning + alternate output (`file` base64), not hard fail
 
 **Forbidden:**
 
@@ -65,3 +72,17 @@ grep @kosolapus/plugin-ts-sdk example-plugin/package.json
 - Presets inside `PluginManifestRequestV2`
 - Secrets in manifest `variables`
 - Commit `.env`, secrets, throwaway plugins
+
+## Custom UI (forms, widgets, islands)
+
+If intake has forms/widgets: [custom-ui/](example-plugin/src/patterns/custom-ui/) + [reference.md](reference.md#custom-ui-publication).
+
+**Your scope:** ESM bundles, `staticAssets`, `ui.forms`, `PluginAssetHttpModule`, `requiredTemplateKeys`. **Not your scope:** `:ff-plugin-form`, prop `host` — platform; do not patch code outside the plugin.
+
+Workflow: `ui/` → `build-ui.mjs` (vite, `external: vue`, verify `export default`) → `*-ui-manifest.ts` → `AppModule` + manifest builder → `keepDistDirs: ["ui"]` → bump `publicationVersion`, rebuild container.
+
+Components: `host` prop only; launch — `host.submitLaunch({ portName: value })`; status — `host.latestResult`, `host.reloadRuns()`. Widget — executor card body only, not the full card.
+
+In executor `help.md`: `:ff-plugin-form{plugin-id="…" form-id="…" diagram-id="…"}` (+ `refresh-interval` for poll). Requires public portal and `system.output` on the status form.
+
+Verify: new `publicationVersion` in logs; `export default` in `dist/ui/*.mjs`; island loads in workspace.
