@@ -28,7 +28,7 @@ docker compose -f compose.demo.yml up -d --build
 docker compose -f compose.demo.yml up -d demo
 ```
 
-Версия SDK зафиксирована в корневом `package.json` → `overrides` (**0.0.9**). Тег demo задаётся переменной `DEMO_IMAGE_REF` (по умолчанию `kosolapus/conveyor-demo:latest`). Перед обновлением SDK сверьте `npm view @kosolapus/plugin-ts-sdk version` и совместимость с используемым образом demo.
+Версия SDK зафиксирована в корневом `package.json` → `overrides` (**0.0.10**). Тег demo задаётся переменной `DEMO_IMAGE_REF` (по умолчанию `kosolapus/conveyor-demo:latest`). Перед обновлением SDK сверьте `npm view @kosolapus/plugin-ts-sdk version` и совместимость с используемым образом demo.
 
 Обзор платформы — [conveyor.digital/docs](https://conveyor.digital/docs). Порты, токены и переменные compose — [`compose.env.example`](compose.env.example).
 

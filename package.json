@@ -17,7 +17,7 @@
     "caldav"
   ],
   "overrides": {
-    "@kosolapus/plugin-ts-sdk": "0.0.9"
+    "@kosolapus/plugin-ts-sdk": "0.0.10"
   },
   "scripts": {
     "build:all": "npm run build --workspaces --if-present",
