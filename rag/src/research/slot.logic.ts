@@ -25,27 +25,62 @@ export const PROPOSE_SYSTEM_PROMPT = [
   'You fill fields of a record from the supplied text records.',
   'For each field, copy one span verbatim from exactly one record that states the value of that field.',
   'If no record states the value, leave the field out.',
-  'Return JSON: {"proposals":[{"slot":string,"evidenceId":string,"span":string}]}.',
-  'The span must be a character-for-character substring of the record named by evidenceId.',
+  'Return JSON: {"proposals":[{"field":string,"record":string,"span":string}]}.',
+  'field and record are the ids given in the input.',
+  "The span must be a character-for-character substring of that record's content.",
 ].join('\n');
 
-export function proposeUserPrompt(input: {
+/**
+ * Short ids handed to the model in place of field names and evidence ids.
+ * The model returns these ids; code maps them back, so a mistyped name or
+ * id can never point at the wrong record.
+ */
+export type SlotHandles = {
+  fields: Map<string, string>;
+  records: Map<string, string>;
+};
+
+export function proposePrompt(input: {
   question: string;
   fields: string[];
   evidence: Evidence[];
-}): string {
-  return JSON.stringify(
+}): { userPrompt: string; handles: SlotHandles } {
+  const fields = new Map(input.fields.map((name, i) => [`f${i + 1}`, name]));
+  const records = new Map(input.evidence.map((row, i) => [`r${i + 1}`, row.id]));
+  const userPrompt = JSON.stringify(
     {
       question: input.question,
-      fields: input.fields,
-      records: input.evidence.map((row) => ({
-        id: row.id,
+      fields: [...fields].map(([id, name]) => ({ id, name })),
+      records: input.evidence.map((row, i) => ({
+        id: `r${i + 1}`,
         content: row.value !== undefined ? String(row.value) : row.content.slice(0, 800),
       })),
     },
     null,
     2,
   );
+  return { userPrompt, handles: { fields, records } };
+}
+
+/** Maps model output back to field names and evidence ids; unknown ids are dropped. */
+export function resolveProposals(raw: unknown, handles: SlotHandles): SlotProposal[] {
+  if (!Array.isArray(raw)) return [];
+  const fieldNames = new Set(handles.fields.values());
+  const recordIds = new Set(handles.records.values());
+  const out: SlotProposal[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const row = item as Record<string, unknown>;
+    const field = String(row.field ?? row.slot ?? '').trim();
+    const record = String(row.record ?? row.evidenceId ?? '').trim();
+    const span = String(row.span ?? '');
+    const slot = handles.fields.get(field) ?? (fieldNames.has(field) ? field : undefined);
+    const evidenceId =
+      handles.records.get(record) ?? (recordIds.has(record) ? record : undefined);
+    if (!slot || !evidenceId || !span.trim()) continue;
+    out.push({ slot, evidenceId, span });
+  }
+  return normalizeProposals(out);
 }
 
 /** Keeps earlier proposals, adds one new proposal per open field. */
@@ -68,21 +103,22 @@ export const CRITIC_SYSTEM_PROMPT = [
   'You check proposed field values against their source record.',
   'For each proposal decide whether the span, read within its record, states the value of the named field.',
   'A span that is about something else does not establish the field even if it appears in the record.',
-  'Return JSON: {"verdicts":[{"slot":string,"evidenceId":string,"establishes":boolean}]}.',
+  'Return JSON: {"verdicts":[{"id":string,"establishes":boolean}]} with the id of each proposal.',
 ].join('\n');
 
-export function criticUserPrompt(input: {
+export function criticPrompt(input: {
   question: string;
   proposals: SlotProposal[];
   evidence: Evidence[];
-}): string {
+}): { userPrompt: string; handles: Map<string, SlotProposal> } {
   const byId = new Map(input.evidence.map((row) => [row.id, row]));
-  return JSON.stringify(
+  const handles = new Map(input.proposals.map((row, i) => [`p${i + 1}`, row]));
+  const userPrompt = JSON.stringify(
     {
       question: input.question,
-      proposals: input.proposals.map((row) => ({
-        slot: row.slot,
-        evidenceId: row.evidenceId,
+      proposals: [...handles].map(([id, row]) => ({
+        id,
+        field: row.slot,
         span: row.span,
         record: byId.get(row.evidenceId)?.content.slice(0, 800) ?? '',
       })),
@@ -90,20 +126,28 @@ export function criticUserPrompt(input: {
     null,
     2,
   );
+  return { userPrompt, handles };
 }
 
 export type CriticVerdict = { slot: string; evidenceId: string; establishes: boolean };
 
-export function normalizeVerdicts(raw: unknown): CriticVerdict[] {
+/** Maps verdict ids back to proposals; unknown ids are dropped. */
+export function resolveVerdicts(
+  raw: unknown,
+  handles: Map<string, SlotProposal>,
+): CriticVerdict[] {
   if (!Array.isArray(raw)) return [];
   const out: CriticVerdict[] = [];
   for (const item of raw) {
     if (!item || typeof item !== 'object') continue;
-    const row = item as Partial<CriticVerdict>;
-    const slot = String(row.slot ?? '').trim();
-    const evidenceId = String(row.evidenceId ?? '').trim();
-    if (!slot || !evidenceId) continue;
-    out.push({ slot, evidenceId, establishes: row.establishes === true });
+    const row = item as Record<string, unknown>;
+    const proposal = handles.get(String(row.id ?? '').trim());
+    if (!proposal) continue;
+    out.push({
+      slot: proposal.slot,
+      evidenceId: proposal.evidenceId,
+      establishes: row.establishes === true,
+    });
   }
   return out;
 }

@@ -6,9 +6,13 @@ import { claimsFromProposals } from './claims.logic';
 import { evidenceFromHits } from './adapters';
 import {
   applyVerdicts,
+  criticPrompt,
   mergeProposals,
   openSlots,
   pendingReview,
+  proposePrompt,
+  resolveProposals,
+  resolveVerdicts,
 } from './slot.logic';
 import { safetyCheck } from './safety.logic';
 import type { Evidence, ResearchClaim, SlotProposal } from './model';
@@ -302,6 +306,41 @@ describe('slot fill', () => {
         proposals: [proposal('f1', 'ask:f1', 'f1'), proposal('f1', 'nope', 'x')],
       }),
     ).toEqual([]);
+  });
+
+  it('Boundary: a span survives hard wraps and double spaces in the record', () => {
+    const evidence = [observation('c0', 'alpha \nbeta  gamma\n\ndelta')];
+    const claims = claimsFromProposals({ evidence, proposals: [proposal('f1', 'c0', 'beta gamma delta')] });
+    expect(claims).toHaveLength(1);
+    expect(verifyClaims({ claims, evidence }).claims[0].status).toBe('supported');
+    expect(claimsFromProposals({ evidence, proposals: [proposal('f1', 'c0', 'betagamma')] })).toEqual([]);
+  });
+
+  it('Interface: the model addresses fields and records by handles, never by copying ids', () => {
+    const evidence = [observation('long-record-id-1:c1', 'alpha beta'), observation('x:c2', 'gamma')];
+    const { userPrompt, handles } = proposePrompt({ question: 'q', fields: ['f1', 'f2'], evidence });
+    expect(userPrompt).not.toContain('long-record-id-1:c1');
+    expect(
+      resolveProposals(
+        [
+          { field: 'f1', record: 'r1', span: 'beta' },
+          { field: 'f2', record: 'r9', span: 'gamma' },
+          { field: 'zzz', record: 'r2', span: 'gamma' },
+        ],
+        handles,
+      ),
+    ).toEqual([proposal('f1', 'long-record-id-1:c1', 'beta')]);
+  });
+
+  it('Interface: a verdict names a proposal handle and maps back to slot and evidence', () => {
+    const proposals = [proposal('f1', 'c0', 'beta'), proposal('f2', 'c1', 'gamma')];
+    const { handles } = criticPrompt({ question: 'q', proposals, evidence: [observation('c0', 'alpha beta')] });
+    expect(
+      resolveVerdicts([{ id: 'p2', establishes: true }, { id: 'p1', establishes: false }, { id: 'p7', establishes: true }], handles),
+    ).toEqual([
+      { slot: 'f2', evidenceId: 'c1', establishes: true },
+      { slot: 'f1', evidenceId: 'c0', establishes: false },
+    ]);
   });
 
   it('Many: one proposal per open field; filled fields are not asked again', () => {

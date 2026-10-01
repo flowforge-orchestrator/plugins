@@ -26,19 +26,21 @@ import {
   normalizeEvidenceList,
   unionEvidence,
   type Evidence,
+  type SlotProposal,
 } from './model';
 import { safetyCheck } from './safety.logic';
 import {
   applyVerdicts,
   CRITIC_SYSTEM_PROMPT,
-  criticUserPrompt,
+  criticPrompt,
   mergeProposals,
-  normalizeVerdicts,
   openSlots,
   pendingReview,
   PROPOSE_SYSTEM_PROMPT,
-  proposeUserPrompt,
+  proposePrompt,
   quotableEvidence,
+  resolveProposals,
+  resolveVerdicts,
 } from './slot.logic';
 
 const transport = {
@@ -440,7 +442,8 @@ export class RagSlotProposeExecutor {
       return { observations: mergeObservations(obs, {}, 'propose:skip').observationsJson };
     }
     const services = getRagServices();
-    let incoming: unknown = [];
+    const prompt = proposePrompt({ question: ctx.inputs.message, fields, evidence: records });
+    let incoming: SlotProposal[] = [];
     try {
       const payload = await services.llm.completeJson<{ proposals?: unknown }>({
         apiKey: ctx.inputs.apiKey ?? '',
@@ -448,13 +451,9 @@ export class RagSlotProposeExecutor {
         baseUrl: ctx.inputs.llmBaseUrl,
         runId: ctx.runId,
         systemPrompt: PROPOSE_SYSTEM_PROMPT,
-        userPrompt: proposeUserPrompt({
-          question: ctx.inputs.message,
-          fields,
-          evidence: records,
-        }),
+        userPrompt: prompt.userPrompt,
       });
-      incoming = payload?.proposals ?? [];
+      incoming = resolveProposals(payload?.proposals, prompt.handles);
     } catch {
       incoming = [];
     }
@@ -533,6 +532,11 @@ export class RagSlotCriticExecutor {
       return { claims: toJsonPort(claims), observations: observationsJson };
     }
     const services = getRagServices();
+    const prompt = criticPrompt({
+      question: ctx.inputs.message,
+      proposals: reviewed,
+      evidence: obs.evidence ?? [],
+    });
     try {
       const payload = await services.llm.completeJson<{ verdicts?: unknown }>({
         apiKey: ctx.inputs.apiKey ?? '',
@@ -540,16 +544,12 @@ export class RagSlotCriticExecutor {
         baseUrl: ctx.inputs.llmBaseUrl,
         runId: ctx.runId,
         systemPrompt: CRITIC_SYSTEM_PROMPT,
-        userPrompt: criticUserPrompt({
-          question: ctx.inputs.message,
-          proposals: reviewed,
-          evidence: obs.evidence ?? [],
-        }),
+        userPrompt: prompt.userPrompt,
       });
       const applied = applyVerdicts({
         proposals,
         claims,
-        verdicts: normalizeVerdicts(payload?.verdicts),
+        verdicts: resolveVerdicts(payload?.verdicts, prompt.handles),
         reviewed,
       });
       const { observationsJson } = mergeObservations(

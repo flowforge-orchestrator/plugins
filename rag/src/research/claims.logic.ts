@@ -34,10 +34,31 @@ export function claimsFromProposals(input: {
   return out;
 }
 
-/** The span must be a copy of the record or the record's computed value. */
+/**
+ * The span must be a copy of the record or the record's computed value.
+ * Line breaks and repeated spaces in the source do not count as a difference:
+ * a record stored with hard wraps still contains the same text.
+ */
 export function spanInside(row: Evidence, span: string): boolean {
-  const needle = span.trim();
+  const needle = collapseWhitespace(span);
   if (!needle) return false;
-  if (row.content.includes(needle)) return true;
-  return row.value !== undefined && String(row.value) === needle;
+  if (collapseWhitespace(row.content).includes(needle)) return true;
+  return row.value !== undefined && collapseWhitespace(String(row.value)) === needle;
+}
+
+/** Trims and folds every run of whitespace into one space. */
+export function collapseWhitespace(text: string): string {
+  let out = '';
+  let pendingSpace = false;
+  for (const ch of text) {
+    const isSpace = ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r' || ch === '\u00a0';
+    if (isSpace) {
+      pendingSpace = out.length > 0;
+      continue;
+    }
+    if (pendingSpace) out += ' ';
+    pendingSpace = false;
+    out += ch;
+  }
+  return out;
 }
