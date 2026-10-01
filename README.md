@@ -41,7 +41,7 @@ docker compose -f compose.demo.yml up -d demo
 | [`redmine/`](redmine/) | Redmine API — [README](redmine/README.md) |
 | [`llm/`](llm/) | Генерация через Ollama/OpenAI — [README](llm/README.md) |
 | [`caldav/`](caldav/) | CalDAV: календари и CRUD событий — [README](caldav/README.md) |
-| [`rag/`](rag/) | RAG по документам (вектор + граф + ask) — [README](rag/README.md); композ [`compose.rag.yml`](compose.rag.yml) |
+| [`rag/`](rag/) | RAG по документам: индекс, граф знаний и ask с проверкой фрагментов — [README](rag/README.md); композ [`compose.rag.yml`](compose.rag.yml) |
 | [`email/`](email/) | Исходящая почта (SMTP) — [README](email/README.md) |
 | [`office/`](office/) | Чтение и запись XLSX, CSV, DOCX — [README](office/README.md) |
 | [`plugin-build-tools/`](plugin-build-tools/) | Общие скрипты сборки (`esbuild`, обрезка `dist/`) |

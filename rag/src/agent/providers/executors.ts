@@ -4,6 +4,14 @@ import {
   Executor,
   FieldDecorator,
 } from '@kosolapus/plugin-ts-sdk';
+import helpSearch from './search/help.md';
+import helpGraph from './graph/help.md';
+import helpOntology from './ontology/help.md';
+import helpPrepare from './prepare/help.md';
+import helpTopic from './topic/help.md';
+import helpRerank from './rerank/help.md';
+import helpAggregate from './aggregate/help.md';
+import helpCalculate from './calculate/help.md';
 import { publicationPullEndpointFromEnv } from '../../getUrlFromEnv';
 import { toJsonPort } from '../../internal/json-port';
 import type { ToolCard } from '../tools/tool-card';
@@ -52,6 +60,7 @@ class SearchIn {
   nodeType: 'plugin.rag.provider.search',
   name: 'RAG: провайдер поиска',
   description: 'Карточка гибридного поиска. ID коллекции и topK задаются здесь.',
+  help: helpSearch,
   pluginId: 'rag',
   inputs: SearchIn,
   outputs: ToolOut,
@@ -86,6 +95,7 @@ class CollectionIn {
   nodeType: 'plugin.rag.provider.graph',
   name: 'RAG: провайдер графа',
   description: 'Карточка обхода графа. ID коллекции задаётся здесь.',
+  help: helpGraph,
   pluginId: 'rag',
   inputs: CollectionIn,
   outputs: ToolOut,
@@ -106,6 +116,7 @@ export class RagGraphProviderExecutor {
   nodeType: 'plugin.rag.provider.ontology',
   name: 'RAG: провайдер онтологии',
   description: 'Карточка lookup онтологии. ID коллекции задаётся здесь.',
+  help: helpOntology,
   pluginId: 'rag',
   inputs: CollectionIn,
   outputs: ToolOut,
@@ -126,6 +137,7 @@ export class RagOntologyProviderExecutor {
   nodeType: 'plugin.rag.provider.prepare',
   name: 'RAG: провайдер инвентаря',
   description: 'Карточка инвентаря документов. ID коллекции задаётся здесь.',
+  help: helpPrepare,
   pluginId: 'rag',
   inputs: CollectionIn,
   outputs: ToolOut,
@@ -148,6 +160,7 @@ class TopicIn {}
   nodeType: 'plugin.rag.provider.topic',
   name: 'RAG: провайдер рамки вопроса',
   description: 'Карточка рамки вопроса. Сообщение приходит в вызов из хода.',
+  help: helpTopic,
   pluginId: 'rag',
   inputs: TopicIn,
   outputs: ToolOut,
@@ -192,6 +205,7 @@ class RerankIn {
   nodeType: 'plugin.rag.provider.rerank',
   name: 'RAG: провайдер реранка',
   description: 'Карточка реранка. topK и maxPerDoc задаются здесь.',
+  help: helpRerank,
   pluginId: 'rag',
   inputs: RerankIn,
   outputs: ToolOut,
@@ -214,6 +228,7 @@ class AggregateIn {}
   nodeType: 'plugin.rag.provider.aggregate',
   name: 'RAG: провайдер агрегации',
   description: 'Карточка count/sum/min/max по evidence.',
+  help: helpAggregate,
   pluginId: 'rag',
   inputs: AggregateIn,
   outputs: ToolOut,
@@ -235,6 +250,7 @@ class CalculateIn {}
   nodeType: 'plugin.rag.provider.calculate',
   name: 'RAG: провайдер вычисления',
   description: 'Карточка add/sub/mul/div двух числовых evidence.',
+  help: helpCalculate,
   pluginId: 'rag',
   inputs: CalculateIn,
   outputs: ToolOut,

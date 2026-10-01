@@ -4,6 +4,17 @@ import {
   Executor,
   FieldDecorator,
 } from '@kosolapus/plugin-ts-sdk';
+import helpEvidenceHits from './evidence-hits/help.md';
+import helpEvidenceInventory from './evidence-inventory/help.md';
+import helpEvidenceText from './evidence-text/help.md';
+import helpEvidenceMerge from './evidence-merge/help.md';
+import helpAggregate from './aggregate/help.md';
+import helpCalculate from './calculate/help.md';
+import helpSlotPropose from './slot-propose/help.md';
+import helpClaims from './claims/help.md';
+import helpSlotCritic from './slot-critic/help.md';
+import helpSynthesize from './synthesize/help.md';
+import helpSafety from './safety/help.md';
 import { publicationPullEndpointFromEnv } from '../getUrlFromEnv';
 import { fromJsonPort, toJsonPort } from '../internal/json-port';
 import { normalizeObservations } from '../agent/turn/agent.turn.logic';
@@ -81,6 +92,7 @@ class EvidenceOut {
   nodeType: 'plugin.rag.evidence.hits',
   name: 'RAG: evidence из поиска',
   description: 'Превращает хиты поиска в observation evidence. Домен коллекции здесь заканчивается.',
+  help: helpEvidenceHits,
   pluginId: 'rag',
   inputs: HitsIn,
   outputs: EvidenceOut,
@@ -122,6 +134,7 @@ class InventoryIn {
   nodeType: 'plugin.rag.evidence.inventory',
   name: 'RAG: evidence из схемы',
   description: 'Каждый документ инвентаря — observation evidence. Текст документа не читается.',
+  help: helpEvidenceInventory,
   pluginId: 'rag',
   inputs: InventoryIn,
   outputs: EvidenceOut,
@@ -177,6 +190,7 @@ class TextIn {
   nodeType: 'plugin.rag.evidence.text',
   name: 'RAG: evidence из текста',
   description: 'Один текст инструмента становится одной observation evidence.',
+  help: helpEvidenceText,
   pluginId: 'rag',
   inputs: TextIn,
   outputs: EvidenceOut,
@@ -260,6 +274,7 @@ class MergeOut {
   nodeType: 'plugin.rag.evidence.merge',
   name: 'RAG: объединить evidence',
   description: 'Складывает evidence адаптеров в одно хранилище. Одинаковый id не дублируется.',
+  help: helpEvidenceMerge,
   pluginId: 'rag',
   inputs: MergeIn,
   outputs: MergeOut,
@@ -330,6 +345,7 @@ function argsOf(raw: unknown): Record<string, string> {
   nodeType: 'plugin.rag.aggregate',
   name: 'RAG: агрегировать',
   description: 'count, sum, min, max по числовому value evidence. Считает код.',
+  help: helpAggregate,
   pluginId: 'rag',
   inputs: OpIn,
   outputs: EvidenceOut,
@@ -353,6 +369,7 @@ export class RagAggregateExecutor {
   nodeType: 'plugin.rag.calculate',
   name: 'RAG: вычислить',
   description: 'add, sub, mul, div двух evidence с числовым value. Считает код.',
+  help: helpCalculate,
   pluginId: 'rag',
   inputs: OpIn,
   outputs: EvidenceOut,
@@ -424,6 +441,7 @@ class ObservationsOut {
   name: 'RAG: значения полей',
   description:
     'Для каждого открытого поля модель копирует один фрагмент из одной записи evidence или оставляет поле пустым. Поле не сдаёт, цикл не закрывает.',
+  help: helpSlotPropose,
   pluginId: 'rag',
   inputs: SlotModelIn,
   outputs: ObservationsOut,
@@ -494,6 +512,7 @@ class ClaimsOut {
   name: 'RAG: claims из предложений',
   description:
     'Claim строится из предложения, чей фрагмент лежит внутри названной записи evidence. Хиты поиска и схема сами по себе claim не становятся.',
+  help: helpClaims,
   pluginId: 'rag',
   inputs: ClaimsIn,
   outputs: ClaimsOut,
@@ -516,6 +535,7 @@ export class RagClaimsExecutor {
   name: 'RAG: критик полей',
   description:
     'Модель решает, называет ли фрагмент значение своего поля. Отказ снимает claim и оставляет поле открытым. Продолжение цикла не решает.',
+  help: helpSlotCritic,
   pluginId: 'rag',
   inputs: SlotModelIn,
   outputs: ClaimsOut,
@@ -616,6 +636,7 @@ class AnswerOut {
   name: 'RAG: синтез ответа',
   description:
     'Пишет ответ только из поддержанных claims, гипотез и ограничений. Исходный корпус в промпт не входит.',
+  help: helpSynthesize,
   pluginId: 'rag',
   inputs: SynthIn,
   outputs: AnswerOut,
@@ -695,6 +716,7 @@ class SafetyIn {
   name: 'RAG: проверка перед выдачей',
   description:
     'Пропускает ответ, если каждый supported claim ссылается на evidence и ни одна гипотеза не помечена фактом.',
+  help: helpSafety,
   pluginId: 'rag',
   inputs: SafetyIn,
   outputs: AnswerOut,
