@@ -1,0 +1,284 @@
+{
+  "id": "rag-chat-linear",
+  "version": 4,
+  "pluginId": "rag",
+  "metadata": {
+    "name": "RAG: чат (линейный)",
+    "description": "search → rerank → answer без цикла агента"
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "RAG chat",
+        "description": "LLM-диалог: широкий поиск, реранк с покрытием docId, grounded-ответ",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": -360,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "history",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true,
+              "defaultValue": 24
+            }
+          ],
+          "outputs": [
+            "query",
+            "message",
+            "history",
+            "collectionId",
+            "topK",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-search",
+          "label": "Search",
+          "position": {
+            "x": -40,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.search.query",
+            "label": "RAG: поиск"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "defaultValue": 24,
+              "static": true
+            }
+          ],
+          "outputs": [
+            "hits",
+            "context",
+            "hitCount"
+          ]
+        },
+        {
+          "id": "w-rerank",
+          "label": "Rerank",
+          "position": {
+            "x": 260,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.rerank",
+            "label": "RAG: реранк"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "hits",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "defaultValue": 12,
+              "static": true
+            },
+            {
+              "name": "maxPerDoc",
+              "type": "number",
+              "defaultValue": 2,
+              "static": true
+            }
+          ],
+          "outputs": [
+            "hits",
+            "context",
+            "hitCount",
+            "docCount"
+          ]
+        },
+        {
+          "id": "w-answer",
+          "label": "LLM answer",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.answer",
+            "label": "RAG: ответ LLM"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "context",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "history",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "answer"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 860,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "answer",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-search",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-search",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-rerank",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e4",
+          "source": "w-search",
+          "sourceHandle": "hits",
+          "target": "w-rerank",
+          "targetHandle": "hits"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "message",
+          "target": "w-answer",
+          "targetHandle": "message"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "history",
+          "target": "w-answer",
+          "targetHandle": "history"
+        },
+        {
+          "id": "e7",
+          "source": "w-rerank",
+          "sourceHandle": "context",
+          "target": "w-answer",
+          "targetHandle": "context"
+        },
+        {
+          "id": "e8",
+          "source": "w-answer",
+          "sourceHandle": "answer",
+          "target": "w-output",
+          "targetHandle": "answer"
+        }
+      ]
+    }
+  ]
+}

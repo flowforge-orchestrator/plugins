@@ -1,0 +1,179 @@
+{
+  "id": "rag-search",
+  "version": 2,
+  "pluginId": "rag",
+  "metadata": {
+    "name": "RAG: поиск",
+    "description": "Один узел plugin.rag.search.query"
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "RAG search",
+        "description": "Гибридный поиск по коллекции",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": -220,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true,
+              "defaultValue": 8
+            }
+          ],
+          "outputs": [
+            "query",
+            "collectionId",
+            "topK",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-search",
+          "label": "Search",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.search.query",
+            "label": "RAG: поиск"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "defaultValue": 8,
+              "static": true
+            }
+          ],
+          "outputs": [
+            "hits",
+            "context",
+            "hitCount"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "hits",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "context",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "hitCount",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-search",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-search",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e3",
+          "source": "w-search",
+          "sourceHandle": "hits",
+          "target": "w-output",
+          "targetHandle": "hits"
+        },
+        {
+          "id": "e4",
+          "source": "w-search",
+          "sourceHandle": "context",
+          "target": "w-output",
+          "targetHandle": "context"
+        },
+        {
+          "id": "e5",
+          "source": "w-search",
+          "sourceHandle": "hitCount",
+          "target": "w-output",
+          "targetHandle": "hitCount"
+        }
+      ]
+    }
+  ]
+}

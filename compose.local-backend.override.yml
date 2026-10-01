@@ -1,0 +1,5 @@
+# Attach plugin pack to local flowforge-dev_app-net (plugin-manager / CP already there).
+networks:
+  default:
+    name: ${COMPOSE_NETWORK_NAME:-flowforge-dev_app-net}
+    external: true

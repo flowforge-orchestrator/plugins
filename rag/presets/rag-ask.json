@@ -1,0 +1,143 @@
+{
+  "id": "rag-ask",
+  "version": 1,
+  "pluginId": "rag",
+  "metadata": {
+    "name": "RAG: вопрос агента",
+    "description": "Цикл agent.turn → switch → search.query или answer. Wire loop/switch on canvas after import if needed."
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "RAG ask",
+        "description": "Агент ходит в корпус только через plugin.rag.search.query",
+        "triggers": [
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": false
+      },
+      "widgets": [
+        {
+          "id": "w-turn",
+          "label": "Agent turn",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.agent.turn",
+            "label": "RAG: ход агента"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "action",
+            "query",
+            "answer",
+            "citations"
+          ]
+        },
+        {
+          "id": "w-switch",
+          "label": "Action switch",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.control.switch",
+            "label": "Switch"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "search",
+            "answer"
+          ]
+        },
+        {
+          "id": "w-search",
+          "label": "Search",
+          "position": {
+            "x": 560,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "plugin.rag.search.query",
+            "label": "RAG: поиск"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "defaultValue": 8,
+              "static": true
+            }
+          ],
+          "outputs": [
+            "hits",
+            "context",
+            "hitCount"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-turn",
+          "sourceHandle": "action",
+          "target": "w-switch",
+          "targetHandle": "value"
+        },
+        {
+          "id": "e2",
+          "source": "w-turn",
+          "sourceHandle": "query",
+          "target": "w-search",
+          "targetHandle": "query"
+        }
+      ]
+    }
+  ]
+}

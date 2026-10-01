@@ -1,0 +1,7 @@
+services:
+  rag-qdrant:
+    ports:
+      - '16333:6333'
+  rag-neo4j:
+    ports:
+      - '17687:7687'

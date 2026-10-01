@@ -1,0 +1,703 @@
+{
+  "id": "rag-index-auto",
+  "version": 2,
+  "pluginId": "rag",
+  "metadata": {
+    "name": "RAG: индексация без HITL",
+    "description": "Extract → chunk → ontology propose/merge → entity/relation → index.write (без user.validation)"
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "RAG index auto",
+        "description": "Автоиндексация документа через webhook",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": -240,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "documentText",
+            "docId",
+            "collectionId",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-extract",
+          "label": "Extract",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.extract",
+            "label": "RAG: извлечь документ"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "blocks",
+            "pageCoverage",
+            "blockCount"
+          ]
+        },
+        {
+          "id": "w-chunk",
+          "label": "Chunk",
+          "position": {
+            "x": 240,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.chunk",
+            "label": "RAG: нарезать чанки"
+          },
+          "config": [
+            {
+              "name": "blocks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "strategy",
+              "type": "select",
+              "defaultValue": "recursive",
+              "static": true
+            },
+            {
+              "name": "maxTokens",
+              "type": "number",
+              "defaultValue": 400,
+              "static": true
+            },
+            {
+              "name": "overlapTokens",
+              "type": "number",
+              "defaultValue": 40,
+              "static": true
+            }
+          ],
+          "outputs": [
+            "chunks",
+            "lengthHistogram",
+            "chunkCount"
+          ]
+        },
+        {
+          "id": "w-propose-e",
+          "label": "Propose entities",
+          "position": {
+            "x": 480,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.ontology.propose.entities",
+            "label": "RAG: предложить типы сущностей"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "candidateTypes",
+            "matchedExisting"
+          ]
+        },
+        {
+          "id": "w-propose-r",
+          "label": "Propose relations",
+          "position": {
+            "x": 720,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.ontology.propose.relations",
+            "label": "RAG: предложить типы связей"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidateTypes",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "candidateRelations",
+            "rejectedDomainRange"
+          ]
+        },
+        {
+          "id": "w-merge",
+          "label": "Merge ontology",
+          "position": {
+            "x": 960,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.ontology.merge",
+            "label": "RAG: слить онтологию"
+          },
+          "config": [
+            {
+              "name": "candidateTypes",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidateRelations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "schema",
+            "delta",
+            "schemaVersion",
+            "operationCount"
+          ]
+        },
+        {
+          "id": "w-ent",
+          "label": "Entity extract",
+          "position": {
+            "x": 1440,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.entity.extract",
+            "label": "RAG: извлечь упоминания"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "schema",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "mentions",
+            "outOfSchemaShare"
+          ]
+        },
+        {
+          "id": "w-resolve",
+          "label": "Entity resolve",
+          "position": {
+            "x": 1680,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.entity.resolve",
+            "label": "RAG: разрешить сущности"
+          },
+          "config": [
+            {
+              "name": "mentions",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "delta",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "entities",
+            "merged",
+            "created",
+            "rebound"
+          ]
+        },
+        {
+          "id": "w-rel",
+          "label": "Relation extract",
+          "position": {
+            "x": 1920,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.relation.extract",
+            "label": "RAG: извлечь связи"
+          },
+          "config": [
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "schema",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "relations",
+            "withoutEvidenceShare"
+          ]
+        },
+        {
+          "id": "w-write",
+          "label": "Index write",
+          "position": {
+            "x": 2160,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.index.write",
+            "label": "RAG: записать индекс"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "relations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "schema",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "vectorsWritten",
+            "vectorsUpdated",
+            "orphansRemoved",
+            "entitiesWritten",
+            "relationsWritten",
+            "schemaVersion",
+            "embeddingModel"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 2400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "vectorsWritten",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "entitiesWritten",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "relationsWritten",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "chunkCount",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-extract",
+          "sourceHandle": "blocks",
+          "target": "w-chunk",
+          "targetHandle": "blocks"
+        },
+        {
+          "id": "e2",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-propose-e",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e3",
+          "source": "w-propose-e",
+          "sourceHandle": "candidateTypes",
+          "target": "w-propose-r",
+          "targetHandle": "candidateTypes"
+        },
+        {
+          "id": "e4",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-propose-r",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e5",
+          "source": "w-propose-e",
+          "sourceHandle": "candidateTypes",
+          "target": "w-merge",
+          "targetHandle": "candidateTypes"
+        },
+        {
+          "id": "e6",
+          "source": "w-propose-r",
+          "sourceHandle": "candidateRelations",
+          "target": "w-merge",
+          "targetHandle": "candidateRelations"
+        },
+        {
+          "id": "e8",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-ent",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e9",
+          "source": "w-merge",
+          "sourceHandle": "schema",
+          "target": "w-ent",
+          "targetHandle": "schema"
+        },
+        {
+          "id": "e10",
+          "source": "w-ent",
+          "sourceHandle": "mentions",
+          "target": "w-resolve",
+          "targetHandle": "mentions"
+        },
+        {
+          "id": "e11",
+          "source": "w-merge",
+          "sourceHandle": "delta",
+          "target": "w-resolve",
+          "targetHandle": "delta"
+        },
+        {
+          "id": "e12",
+          "source": "w-resolve",
+          "sourceHandle": "entities",
+          "target": "w-rel",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e13",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-rel",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e14",
+          "source": "w-merge",
+          "sourceHandle": "schema",
+          "target": "w-rel",
+          "targetHandle": "schema"
+        },
+        {
+          "id": "e15",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-write",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e16",
+          "source": "w-resolve",
+          "sourceHandle": "entities",
+          "target": "w-write",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e17",
+          "source": "w-rel",
+          "sourceHandle": "relations",
+          "target": "w-write",
+          "targetHandle": "relations"
+        },
+        {
+          "id": "e18",
+          "source": "w-merge",
+          "sourceHandle": "schema",
+          "target": "w-write",
+          "targetHandle": "schema"
+        },
+        {
+          "id": "et1",
+          "source": "w-trigger",
+          "sourceHandle": "documentText",
+          "target": "w-extract",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "et2",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-extract",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "et3",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-chunk",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "et4",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-write",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "et5",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-propose-e",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et6",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-propose-r",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et7",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-merge",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et8",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-ent",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et9",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-resolve",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et10",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-rel",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et11",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-write",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "eo1",
+          "source": "w-write",
+          "sourceHandle": "vectorsWritten",
+          "target": "w-output",
+          "targetHandle": "vectorsWritten"
+        },
+        {
+          "id": "eo2",
+          "source": "w-write",
+          "sourceHandle": "entitiesWritten",
+          "target": "w-output",
+          "targetHandle": "entitiesWritten"
+        },
+        {
+          "id": "eo3",
+          "source": "w-write",
+          "sourceHandle": "relationsWritten",
+          "target": "w-output",
+          "targetHandle": "relationsWritten"
+        },
+        {
+          "id": "eo4",
+          "source": "w-chunk",
+          "sourceHandle": "chunkCount",
+          "target": "w-output",
+          "targetHandle": "chunkCount"
+        }
+      ]
+    }
+  ]
+}

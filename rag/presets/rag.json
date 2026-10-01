@@ -1,0 +1,3113 @@
+{
+  "id": "rag",
+  "version": 5,
+  "pluginId": "rag",
+  "metadata": {
+    "name": "RAG",
+    "description": "Набор из трёх процессов: индексация, поиск и чат по корпусу"
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "RAG: индексация",
+        "description": "Индексация документа в коллекцию",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": -240,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "documentText",
+            "docId",
+            "collectionId",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-extract",
+          "label": "Extract",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.extract",
+            "label": "RAG: извлечь документ"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "blocks",
+            "pageCoverage",
+            "blockCount"
+          ]
+        },
+        {
+          "id": "w-chunk",
+          "label": "Chunk",
+          "position": {
+            "x": 240,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.chunk",
+            "label": "RAG: нарезать чанки"
+          },
+          "config": [
+            {
+              "name": "blocks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "strategy",
+              "type": "select",
+              "defaultValue": "recursive",
+              "static": true
+            },
+            {
+              "name": "maxTokens",
+              "type": "number",
+              "defaultValue": 400,
+              "static": true
+            },
+            {
+              "name": "overlapTokens",
+              "type": "number",
+              "defaultValue": 40,
+              "static": true
+            }
+          ],
+          "outputs": [
+            "chunks",
+            "lengthHistogram",
+            "chunkCount"
+          ]
+        },
+        {
+          "id": "w-propose-e",
+          "label": "Propose entities",
+          "position": {
+            "x": 480,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.ontology.propose.entities",
+            "label": "RAG: предложить типы сущностей"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "candidateTypes",
+            "matchedExisting"
+          ]
+        },
+        {
+          "id": "w-propose-r",
+          "label": "Propose relations",
+          "position": {
+            "x": 720,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.ontology.propose.relations",
+            "label": "RAG: предложить типы связей"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidateTypes",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "candidateRelations",
+            "rejectedDomainRange"
+          ]
+        },
+        {
+          "id": "w-merge",
+          "label": "Merge ontology",
+          "position": {
+            "x": 960,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.ontology.merge",
+            "label": "RAG: слить онтологию"
+          },
+          "config": [
+            {
+              "name": "candidateTypes",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidateRelations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "schema",
+            "delta",
+            "schemaVersion",
+            "operationCount"
+          ]
+        },
+        {
+          "id": "w-ent",
+          "label": "Entity extract",
+          "position": {
+            "x": 1440,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.entity.extract",
+            "label": "RAG: извлечь упоминания"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "schema",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "mentions",
+            "outOfSchemaShare"
+          ]
+        },
+        {
+          "id": "w-resolve",
+          "label": "Entity resolve",
+          "position": {
+            "x": 1680,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.entity.resolve",
+            "label": "RAG: разрешить сущности"
+          },
+          "config": [
+            {
+              "name": "mentions",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "delta",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "entities",
+            "merged",
+            "created",
+            "rebound"
+          ]
+        },
+        {
+          "id": "w-rel",
+          "label": "Relation extract",
+          "position": {
+            "x": 1920,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.relation.extract",
+            "label": "RAG: извлечь связи"
+          },
+          "config": [
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "schema",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "relations",
+            "withoutEvidenceShare"
+          ]
+        },
+        {
+          "id": "w-write",
+          "label": "Index write",
+          "position": {
+            "x": 2160,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.index.write",
+            "label": "RAG: записать индекс"
+          },
+          "config": [
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "relations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "schema",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "vectorsWritten",
+            "vectorsUpdated",
+            "orphansRemoved",
+            "entitiesWritten",
+            "relationsWritten",
+            "schemaVersion",
+            "embeddingModel"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 2400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "vectorsWritten",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "entitiesWritten",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "relationsWritten",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "chunkCount",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-extract",
+          "sourceHandle": "blocks",
+          "target": "w-chunk",
+          "targetHandle": "blocks"
+        },
+        {
+          "id": "e2",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-propose-e",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e3",
+          "source": "w-propose-e",
+          "sourceHandle": "candidateTypes",
+          "target": "w-propose-r",
+          "targetHandle": "candidateTypes"
+        },
+        {
+          "id": "e4",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-propose-r",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e5",
+          "source": "w-propose-e",
+          "sourceHandle": "candidateTypes",
+          "target": "w-merge",
+          "targetHandle": "candidateTypes"
+        },
+        {
+          "id": "e6",
+          "source": "w-propose-r",
+          "sourceHandle": "candidateRelations",
+          "target": "w-merge",
+          "targetHandle": "candidateRelations"
+        },
+        {
+          "id": "e8",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-ent",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e9",
+          "source": "w-merge",
+          "sourceHandle": "schema",
+          "target": "w-ent",
+          "targetHandle": "schema"
+        },
+        {
+          "id": "e10",
+          "source": "w-ent",
+          "sourceHandle": "mentions",
+          "target": "w-resolve",
+          "targetHandle": "mentions"
+        },
+        {
+          "id": "e11",
+          "source": "w-merge",
+          "sourceHandle": "delta",
+          "target": "w-resolve",
+          "targetHandle": "delta"
+        },
+        {
+          "id": "e12",
+          "source": "w-resolve",
+          "sourceHandle": "entities",
+          "target": "w-rel",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e13",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-rel",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e14",
+          "source": "w-merge",
+          "sourceHandle": "schema",
+          "target": "w-rel",
+          "targetHandle": "schema"
+        },
+        {
+          "id": "e15",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-write",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e16",
+          "source": "w-resolve",
+          "sourceHandle": "entities",
+          "target": "w-write",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e17",
+          "source": "w-rel",
+          "sourceHandle": "relations",
+          "target": "w-write",
+          "targetHandle": "relations"
+        },
+        {
+          "id": "e18",
+          "source": "w-merge",
+          "sourceHandle": "schema",
+          "target": "w-write",
+          "targetHandle": "schema"
+        },
+        {
+          "id": "et1",
+          "source": "w-trigger",
+          "sourceHandle": "documentText",
+          "target": "w-extract",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "et2",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-extract",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "et3",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-chunk",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "et4",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-write",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "et5",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-propose-e",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et6",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-propose-r",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et7",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-merge",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et8",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-ent",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et9",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-resolve",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et10",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-rel",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "et11",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-write",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "eo1",
+          "source": "w-write",
+          "sourceHandle": "vectorsWritten",
+          "target": "w-output",
+          "targetHandle": "vectorsWritten"
+        },
+        {
+          "id": "eo2",
+          "source": "w-write",
+          "sourceHandle": "entitiesWritten",
+          "target": "w-output",
+          "targetHandle": "entitiesWritten"
+        },
+        {
+          "id": "eo3",
+          "source": "w-write",
+          "sourceHandle": "relationsWritten",
+          "target": "w-output",
+          "targetHandle": "relationsWritten"
+        },
+        {
+          "id": "eo4",
+          "source": "w-chunk",
+          "sourceHandle": "chunkCount",
+          "target": "w-output",
+          "targetHandle": "chunkCount"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "RAG: поиск",
+        "description": "Гибридный поиск по той же коллекции",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": -220,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true,
+              "defaultValue": 8
+            }
+          ],
+          "outputs": [
+            "query",
+            "collectionId",
+            "topK",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-search",
+          "label": "Search",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.search.query",
+            "label": "RAG: поиск"
+          },
+          "config": [
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "defaultValue": 8,
+              "static": true
+            }
+          ],
+          "outputs": [
+            "hits",
+            "context",
+            "hitCount"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "hits",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "context",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "hitCount",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-search",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-search",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e3",
+          "source": "w-search",
+          "sourceHandle": "hits",
+          "target": "w-output",
+          "targetHandle": "hits"
+        },
+        {
+          "id": "e4",
+          "source": "w-search",
+          "sourceHandle": "context",
+          "target": "w-output",
+          "targetHandle": "context"
+        },
+        {
+          "id": "e5",
+          "source": "w-search",
+          "sourceHandle": "hitCount",
+          "target": "w-output",
+          "targetHandle": "hitCount"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "RAG: чат",
+        "description": "Диалог по корпусу: один выход хода, ответ на внешний output",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": -480,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "history",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true,
+              "defaultValue": 24
+            }
+          ],
+          "outputs": [
+            "message",
+            "query",
+            "history",
+            "collectionId",
+            "topK",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-schema",
+          "label": "Schema",
+          "position": {
+            "x": -160,
+            "y": -160
+          },
+          "source": {
+            "nodeType": "plugin.rag.graph.prepare",
+            "label": "RAG: инвентарь коллекции"
+          },
+          "config": [
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "inventory",
+            "docCount",
+            "observations"
+          ]
+        },
+        {
+          "id": "w-schema-ev",
+          "label": "Schema evidence",
+          "position": {
+            "x": 160,
+            "y": -160
+          },
+          "source": {
+            "nodeType": "plugin.rag.evidence.inventory",
+            "label": "RAG: evidence из схемы"
+          },
+          "config": [
+            {
+              "name": "inventory",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "collection"
+            }
+          ],
+          "outputs": [
+            "evidence"
+          ]
+        },
+        {
+          "id": "w-task",
+          "label": "Task",
+          "position": {
+            "x": -160,
+            "y": 160
+          },
+          "source": {
+            "nodeType": "plugin.rag.topic",
+            "label": "RAG: рамка вопроса"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "history",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "frame",
+            "skipRetrieval",
+            "population",
+            "mode",
+            "observations"
+          ]
+        },
+        {
+          "id": "w-seed",
+          "label": "Seed evidence",
+          "position": {
+            "x": 160,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "plugin.rag.evidence.merge",
+            "label": "RAG: объединить evidence"
+          },
+          "config": [
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "a",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "evidence",
+            "observations"
+          ]
+        },
+        {
+          "id": "w-loop",
+          "label": "Turns",
+          "position": {
+            "x": 480,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "system.loop",
+            "label": "Цикл"
+          },
+          "config": [
+            {
+              "name": "iterator",
+              "type": "keyvalue",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": []
+            },
+            {
+              "name": "body",
+              "type": "keyvalue",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": {
+                "widgets": [
+                  {
+                    "id": "b-trigger",
+                    "label": "Trigger",
+                    "position": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "source": {
+                      "nodeType": "system.trigger.input",
+                      "label": "Входные данные триггера"
+                    },
+                    "config": [
+                      {
+                        "name": "message",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "query",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "history",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "topK",
+                        "type": "number",
+                        "isPort": true,
+                        "canBePort": true,
+                        "defaultValue": 24
+                      },
+                      {
+                        "name": "researchMode",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "message",
+                      "query",
+                      "history",
+                      "collectionId",
+                      "topK",
+                      "researchMode",
+                      "observations",
+                      "trigger"
+                    ]
+                  },
+                  {
+                    "id": "b-switch",
+                    "label": "Mode",
+                    "position": {
+                      "x": 280,
+                      "y": 0
+                    },
+                    "source": {
+                      "nodeType": "system.control.switch",
+                      "label": "Control: switch"
+                    },
+                    "config": [
+                      {
+                        "name": "value",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true
+                      }
+                    ],
+                    "outputs": [
+                      "direct",
+                      "retrieval",
+                      "analysis",
+                      "research"
+                    ]
+                  },
+                  {
+                    "id": "b-direct",
+                    "label": "Direct",
+                    "position": {
+                      "x": 560,
+                      "y": -200
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.evidence.merge",
+                      "label": "RAG: объединить evidence"
+                    },
+                    "config": [
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "enabled",
+                        "type": "boolean",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "evidence",
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-plan",
+                    "label": "Plan",
+                    "position": {
+                      "x": 820,
+                      "y": -220
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.agent.plan",
+                      "label": "RAG: стратегия"
+                    },
+                    "config": [
+                      {
+                        "name": "strategy",
+                        "type": "select",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "isPrimary": true,
+                        "defaultValue": "cot"
+                      }
+                    ],
+                    "outputs": [
+                      "strategy"
+                    ]
+                  },
+                  {
+                    "id": "b-prov-search",
+                    "label": "Поиск",
+                    "position": {
+                      "x": 280,
+                      "y": -280
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.provider.search",
+                      "label": "Поиск"
+                    },
+                    "config": [
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "topK",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": 24
+                      }
+                    ],
+                    "outputs": [
+                      "tool"
+                    ]
+                  },
+                  {
+                    "id": "b-prov-graph",
+                    "label": "Граф",
+                    "position": {
+                      "x": 280,
+                      "y": -190
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.provider.graph",
+                      "label": "Граф"
+                    },
+                    "config": [
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      }
+                    ],
+                    "outputs": [
+                      "tool"
+                    ]
+                  },
+                  {
+                    "id": "b-prov-ontology",
+                    "label": "Онтология",
+                    "position": {
+                      "x": 280,
+                      "y": -100
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.provider.ontology",
+                      "label": "Онтология"
+                    },
+                    "config": [
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      }
+                    ],
+                    "outputs": [
+                      "tool"
+                    ]
+                  },
+                  {
+                    "id": "b-prov-aggregate",
+                    "label": "Агрегация",
+                    "position": {
+                      "x": 280,
+                      "y": -10
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.provider.aggregate",
+                      "label": "Агрегация"
+                    },
+                    "config": [],
+                    "outputs": [
+                      "tool"
+                    ]
+                  },
+                  {
+                    "id": "b-prov-calculate",
+                    "label": "Вычисление",
+                    "position": {
+                      "x": 280,
+                      "y": 80
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.provider.calculate",
+                      "label": "Вычисление"
+                    },
+                    "config": [],
+                    "outputs": [
+                      "tool"
+                    ]
+                  },
+                  {
+                    "id": "b-router",
+                    "label": "Tools",
+                    "position": {
+                      "x": 560,
+                      "y": 40
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.tool.router",
+                      "label": "RAG: роутер инструментов"
+                    },
+                    "config": [
+                      {
+                        "name": "search",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "graph",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "ontology",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "aggregate",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "calculate",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "tools"
+                    ]
+                  },
+                  {
+                    "id": "b-turn",
+                    "label": "Agent turn",
+                    "position": {
+                      "x": 820,
+                      "y": 40
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.agent.turn",
+                      "label": "RAG: ход агента"
+                    },
+                    "config": [
+                      {
+                        "name": "userPrompt",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "history",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "rules",
+                        "type": "textarea",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "[]"
+                      },
+                      {
+                        "name": "skills",
+                        "type": "textarea",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "[{\"id\": \"verdict\", \"body\": \"Read observations.verdict before deciding. Each gap names what is missing: run the tool that supplies it, or mark the slot unknown in the answer. Every value in the answer names its docId. Do not invent values that observations do not contain.\"}]"
+                      },
+                      {
+                        "name": "tools",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "strategy",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "mode",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "enabled",
+                        "type": "boolean",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "queryTool",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "search"
+                      },
+                      {
+                        "name": "systemPrompt",
+                        "type": "textarea",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      },
+                      {
+                        "name": "maxActions",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": 4
+                      },
+                      {
+                        "name": "llmModel",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      },
+                      {
+                        "name": "llmBaseUrl",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      },
+                      {
+                        "name": "temperature",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": 0
+                      },
+                      {
+                        "name": "maxTokens",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      }
+                    ],
+                    "outputs": [
+                      "op",
+                      "query",
+                      "args",
+                      "actions",
+                      "answer",
+                      "observations",
+                      "metrics",
+                      "history"
+                    ]
+                  },
+                  {
+                    "id": "b-search",
+                    "label": "Search",
+                    "position": {
+                      "x": 820,
+                      "y": 200
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.search.query",
+                      "label": "RAG: поиск"
+                    },
+                    "config": [
+                      {
+                        "name": "query",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "action",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "topK",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": 24
+                      }
+                    ],
+                    "outputs": [
+                      "hits",
+                      "context",
+                      "hitCount",
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-graph",
+                    "label": "Graph",
+                    "position": {
+                      "x": 820,
+                      "y": 340
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.graph.query",
+                      "label": "RAG: обход графа"
+                    },
+                    "config": [
+                      {
+                        "name": "query",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "action",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "graphContext",
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-ontology",
+                    "label": "Ontology",
+                    "position": {
+                      "x": 820,
+                      "y": 480
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.ontology.lookup",
+                      "label": "RAG: lookup онтологии"
+                    },
+                    "config": [
+                      {
+                        "name": "query",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "action",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "ontologyContext",
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-hits",
+                    "label": "Hits → evidence",
+                    "position": {
+                      "x": 1100,
+                      "y": 200
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.evidence.hits",
+                      "label": "RAG: evidence из поиска"
+                    },
+                    "config": [
+                      {
+                        "name": "hits",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "source",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "collection"
+                      },
+                      {
+                        "name": "field",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "evidence"
+                    ]
+                  },
+                  {
+                    "id": "b-gtext",
+                    "label": "Graph → evidence",
+                    "position": {
+                      "x": 1100,
+                      "y": 340
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.evidence.text",
+                      "label": "RAG: evidence из текста"
+                    },
+                    "config": [
+                      {
+                        "name": "content",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "id",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "graph"
+                      },
+                      {
+                        "name": "source",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "graph"
+                      },
+                      {
+                        "name": "extractionMethod",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "graph"
+                      }
+                    ],
+                    "outputs": [
+                      "evidence"
+                    ]
+                  },
+                  {
+                    "id": "b-otext",
+                    "label": "Ontology → evidence",
+                    "position": {
+                      "x": 1100,
+                      "y": 480
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.evidence.text",
+                      "label": "RAG: evidence из текста"
+                    },
+                    "config": [
+                      {
+                        "name": "content",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "id",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "ontology"
+                      },
+                      {
+                        "name": "source",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "ontology"
+                      },
+                      {
+                        "name": "extractionMethod",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": "ontology"
+                      }
+                    ],
+                    "outputs": [
+                      "evidence"
+                    ]
+                  },
+                  {
+                    "id": "b-agg",
+                    "label": "Aggregate",
+                    "position": {
+                      "x": 1100,
+                      "y": 620
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.aggregate",
+                      "label": "RAG: агрегировать"
+                    },
+                    "config": [
+                      {
+                        "name": "action",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "args",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "evidence"
+                    ]
+                  },
+                  {
+                    "id": "b-calc",
+                    "label": "Calculate",
+                    "position": {
+                      "x": 1100,
+                      "y": 760
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.calculate",
+                      "label": "RAG: вычислить"
+                    },
+                    "config": [
+                      {
+                        "name": "action",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "args",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "evidence"
+                    ]
+                  },
+                  {
+                    "id": "b-merge",
+                    "label": "Evidence",
+                    "position": {
+                      "x": 1380,
+                      "y": 400
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.evidence.merge",
+                      "label": "RAG: объединить evidence"
+                    },
+                    "config": [
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "a",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "b",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "c",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "d",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "e",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "evidence",
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-propose",
+                    "label": "Field values",
+                    "position": {
+                      "x": 1600,
+                      "y": 400
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.slot.propose",
+                      "label": "RAG: значения полей"
+                    },
+                    "config": [
+                      {
+                        "name": "message",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "llmModel",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      },
+                      {
+                        "name": "llmBaseUrl",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      }
+                    ],
+                    "outputs": [
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-claims",
+                    "label": "Claims",
+                    "position": {
+                      "x": 1820,
+                      "y": 400
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.claims",
+                      "label": "RAG: claims из предложений"
+                    },
+                    "config": [
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true
+                      }
+                    ],
+                    "outputs": [
+                      "claims",
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-critic",
+                    "label": "Field critic",
+                    "position": {
+                      "x": 2040,
+                      "y": 400
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.slot.critic",
+                      "label": "RAG: критик полей"
+                    },
+                    "config": [
+                      {
+                        "name": "message",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true,
+                        "isRequired": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "llmModel",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      },
+                      {
+                        "name": "llmBaseUrl",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      }
+                    ],
+                    "outputs": [
+                      "claims",
+                      "observations"
+                    ]
+                  },
+                  {
+                    "id": "b-judge",
+                    "label": "Judge",
+                    "position": {
+                      "x": 1100,
+                      "y": 40
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.judge",
+                      "label": "RAG: судья"
+                    },
+                    "config": [
+                      {
+                        "name": "message",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true
+                      },
+                      {
+                        "name": "answer",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "decision",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "history",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "llmModel",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      },
+                      {
+                        "name": "llmBaseUrl",
+                        "type": "string",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      },
+                      {
+                        "name": "temperature",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": 0
+                      },
+                      {
+                        "name": "maxTokens",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true
+                      }
+                    ],
+                    "outputs": [
+                      "verdict",
+                      "consistent",
+                      "sufficient",
+                      "complete",
+                      "observations",
+                      "history"
+                    ]
+                  },
+                  {
+                    "id": "b-guard",
+                    "label": "Gate",
+                    "position": {
+                      "x": 1380,
+                      "y": 40
+                    },
+                    "source": {
+                      "nodeType": "plugin.rag.guard",
+                      "label": "RAG: гард цикла"
+                    },
+                    "config": [
+                      {
+                        "name": "answer",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "turnLimited",
+                        "type": "boolean",
+                        "isPort": true,
+                        "canBePort": true,
+                        "defaultValue": false
+                      },
+                      {
+                        "name": "maxTurns",
+                        "type": "number",
+                        "isPort": false,
+                        "canBePort": false,
+                        "static": true,
+                        "defaultValue": 6
+                      }
+                    ],
+                    "outputs": [
+                      "answer",
+                      "breakLoop",
+                      "continueLoop",
+                      "reason",
+                      "observations",
+                      "metrics"
+                    ]
+                  },
+                  {
+                    "id": "b-out",
+                    "label": "Turn result",
+                    "position": {
+                      "x": 1660,
+                      "y": 40
+                    },
+                    "source": {
+                      "nodeType": "system.output",
+                      "label": "Выход процесса"
+                    },
+                    "config": [
+                      {
+                        "name": "answer",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true,
+                        "isPrimary": true
+                      },
+                      {
+                        "name": "message",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "history",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "collectionId",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "query",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "topK",
+                        "type": "number",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "continueLoop",
+                        "type": "boolean",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "metrics",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "observations",
+                        "type": "textarea",
+                        "isPort": true,
+                        "canBePort": true
+                      },
+                      {
+                        "name": "researchMode",
+                        "type": "string",
+                        "isPort": true,
+                        "canBePort": true
+                      }
+                    ],
+                    "outputs": [
+                      "answer",
+                      "message",
+                      "history",
+                      "collectionId",
+                      "query",
+                      "topK",
+                      "continueLoop",
+                      "metrics",
+                      "observations",
+                      "researchMode"
+                    ]
+                  }
+                ],
+                "edges": [
+                  {
+                    "id": "sw-value",
+                    "source": "b-trigger",
+                    "sourceHandle": "researchMode",
+                    "target": "b-switch",
+                    "targetHandle": "value"
+                  },
+                  {
+                    "id": "sw-direct",
+                    "source": "b-switch",
+                    "sourceHandle": "direct",
+                    "target": "b-direct",
+                    "targetHandle": "enabled"
+                  },
+                  {
+                    "id": "sw-direct-obs",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-direct",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "sw-ret",
+                    "source": "b-switch",
+                    "sourceHandle": "retrieval",
+                    "target": "b-turn",
+                    "targetHandle": "enabled"
+                  },
+                  {
+                    "id": "sw-an",
+                    "source": "b-switch",
+                    "sourceHandle": "analysis",
+                    "target": "b-turn",
+                    "targetHandle": "enabled"
+                  },
+                  {
+                    "id": "sw-re",
+                    "source": "b-switch",
+                    "sourceHandle": "research",
+                    "target": "b-turn",
+                    "targetHandle": "enabled"
+                  },
+                  {
+                    "id": "e-msg",
+                    "source": "b-trigger",
+                    "sourceHandle": "message",
+                    "target": "b-turn",
+                    "targetHandle": "userPrompt"
+                  },
+                  {
+                    "id": "e-hist",
+                    "source": "b-trigger",
+                    "sourceHandle": "history",
+                    "target": "b-turn",
+                    "targetHandle": "history"
+                  },
+                  {
+                    "id": "e-obs",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-turn",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "e-mode",
+                    "source": "b-trigger",
+                    "sourceHandle": "researchMode",
+                    "target": "b-turn",
+                    "targetHandle": "mode"
+                  },
+                  {
+                    "id": "e-col-search",
+                    "source": "b-trigger",
+                    "sourceHandle": "collectionId",
+                    "target": "b-prov-search",
+                    "targetHandle": "collectionId"
+                  },
+                  {
+                    "id": "e-col-graph",
+                    "source": "b-trigger",
+                    "sourceHandle": "collectionId",
+                    "target": "b-prov-graph",
+                    "targetHandle": "collectionId"
+                  },
+                  {
+                    "id": "e-col-ontology",
+                    "source": "b-trigger",
+                    "sourceHandle": "collectionId",
+                    "target": "b-prov-ontology",
+                    "targetHandle": "collectionId"
+                  },
+                  {
+                    "id": "e-strat",
+                    "source": "b-plan",
+                    "sourceHandle": "strategy",
+                    "target": "b-turn",
+                    "targetHandle": "strategy"
+                  },
+                  {
+                    "id": "e-tool-search",
+                    "source": "b-prov-search",
+                    "sourceHandle": "tool",
+                    "target": "b-router",
+                    "targetHandle": "search"
+                  },
+                  {
+                    "id": "e-tool-graph",
+                    "source": "b-prov-graph",
+                    "sourceHandle": "tool",
+                    "target": "b-router",
+                    "targetHandle": "graph"
+                  },
+                  {
+                    "id": "e-tool-ontology",
+                    "source": "b-prov-ontology",
+                    "sourceHandle": "tool",
+                    "target": "b-router",
+                    "targetHandle": "ontology"
+                  },
+                  {
+                    "id": "e-tool-aggregate",
+                    "source": "b-prov-aggregate",
+                    "sourceHandle": "tool",
+                    "target": "b-router",
+                    "targetHandle": "aggregate"
+                  },
+                  {
+                    "id": "e-tool-calculate",
+                    "source": "b-prov-calculate",
+                    "sourceHandle": "tool",
+                    "target": "b-router",
+                    "targetHandle": "calculate"
+                  },
+                  {
+                    "id": "e-tools",
+                    "source": "b-router",
+                    "sourceHandle": "tools",
+                    "target": "b-turn",
+                    "targetHandle": "tools"
+                  },
+                  {
+                    "id": "s-act",
+                    "source": "b-turn",
+                    "sourceHandle": "op",
+                    "target": "b-search",
+                    "targetHandle": "action"
+                  },
+                  {
+                    "id": "s-q",
+                    "source": "b-turn",
+                    "sourceHandle": "query",
+                    "target": "b-search",
+                    "targetHandle": "query"
+                  },
+                  {
+                    "id": "s-col",
+                    "source": "b-trigger",
+                    "sourceHandle": "collectionId",
+                    "target": "b-search",
+                    "targetHandle": "collectionId"
+                  },
+                  {
+                    "id": "s-obs",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-search",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "g-act",
+                    "source": "b-turn",
+                    "sourceHandle": "op",
+                    "target": "b-graph",
+                    "targetHandle": "action"
+                  },
+                  {
+                    "id": "g-q",
+                    "source": "b-turn",
+                    "sourceHandle": "query",
+                    "target": "b-graph",
+                    "targetHandle": "query"
+                  },
+                  {
+                    "id": "g-col",
+                    "source": "b-trigger",
+                    "sourceHandle": "collectionId",
+                    "target": "b-graph",
+                    "targetHandle": "collectionId"
+                  },
+                  {
+                    "id": "g-obs",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-graph",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "o-act",
+                    "source": "b-turn",
+                    "sourceHandle": "op",
+                    "target": "b-ontology",
+                    "targetHandle": "action"
+                  },
+                  {
+                    "id": "o-q",
+                    "source": "b-turn",
+                    "sourceHandle": "query",
+                    "target": "b-ontology",
+                    "targetHandle": "query"
+                  },
+                  {
+                    "id": "o-col",
+                    "source": "b-trigger",
+                    "sourceHandle": "collectionId",
+                    "target": "b-ontology",
+                    "targetHandle": "collectionId"
+                  },
+                  {
+                    "id": "o-obs",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-ontology",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "h-hits",
+                    "source": "b-search",
+                    "sourceHandle": "hits",
+                    "target": "b-hits",
+                    "targetHandle": "hits"
+                  },
+                  {
+                    "id": "h-field",
+                    "source": "b-turn",
+                    "sourceHandle": "query",
+                    "target": "b-hits",
+                    "targetHandle": "field"
+                  },
+                  {
+                    "id": "gt-c",
+                    "source": "b-graph",
+                    "sourceHandle": "graphContext",
+                    "target": "b-gtext",
+                    "targetHandle": "content"
+                  },
+                  {
+                    "id": "ot-c",
+                    "source": "b-ontology",
+                    "sourceHandle": "ontologyContext",
+                    "target": "b-otext",
+                    "targetHandle": "content"
+                  },
+                  {
+                    "id": "a-act",
+                    "source": "b-turn",
+                    "sourceHandle": "op",
+                    "target": "b-agg",
+                    "targetHandle": "action"
+                  },
+                  {
+                    "id": "a-args",
+                    "source": "b-turn",
+                    "sourceHandle": "args",
+                    "target": "b-agg",
+                    "targetHandle": "args"
+                  },
+                  {
+                    "id": "a-obs",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-agg",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "c-act",
+                    "source": "b-turn",
+                    "sourceHandle": "op",
+                    "target": "b-calc",
+                    "targetHandle": "action"
+                  },
+                  {
+                    "id": "c-args",
+                    "source": "b-turn",
+                    "sourceHandle": "args",
+                    "target": "b-calc",
+                    "targetHandle": "args"
+                  },
+                  {
+                    "id": "c-obs",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-calc",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "m-base",
+                    "source": "b-trigger",
+                    "sourceHandle": "observations",
+                    "target": "b-merge",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "m-a",
+                    "source": "b-hits",
+                    "sourceHandle": "evidence",
+                    "target": "b-merge",
+                    "targetHandle": "a"
+                  },
+                  {
+                    "id": "m-b",
+                    "source": "b-gtext",
+                    "sourceHandle": "evidence",
+                    "target": "b-merge",
+                    "targetHandle": "b"
+                  },
+                  {
+                    "id": "m-c",
+                    "source": "b-otext",
+                    "sourceHandle": "evidence",
+                    "target": "b-merge",
+                    "targetHandle": "c"
+                  },
+                  {
+                    "id": "m-d",
+                    "source": "b-agg",
+                    "sourceHandle": "evidence",
+                    "target": "b-merge",
+                    "targetHandle": "d"
+                  },
+                  {
+                    "id": "m-e",
+                    "source": "b-calc",
+                    "sourceHandle": "evidence",
+                    "target": "b-merge",
+                    "targetHandle": "e"
+                  },
+                  {
+                    "id": "pr-msg",
+                    "source": "b-trigger",
+                    "sourceHandle": "message",
+                    "target": "b-propose",
+                    "targetHandle": "message"
+                  },
+                  {
+                    "id": "pr-obs",
+                    "source": "b-merge",
+                    "sourceHandle": "observations",
+                    "target": "b-propose",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "cl-obs",
+                    "source": "b-propose",
+                    "sourceHandle": "observations",
+                    "target": "b-claims",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "cr-msg",
+                    "source": "b-trigger",
+                    "sourceHandle": "message",
+                    "target": "b-critic",
+                    "targetHandle": "message"
+                  },
+                  {
+                    "id": "cr-obs",
+                    "source": "b-claims",
+                    "sourceHandle": "observations",
+                    "target": "b-critic",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "j-msg",
+                    "source": "b-trigger",
+                    "sourceHandle": "message",
+                    "target": "b-judge",
+                    "targetHandle": "message"
+                  },
+                  {
+                    "id": "j-h-turn",
+                    "source": "b-turn",
+                    "sourceHandle": "history",
+                    "target": "b-judge",
+                    "targetHandle": "history"
+                  },
+                  {
+                    "id": "j-h-trigger",
+                    "source": "b-trigger",
+                    "sourceHandle": "history",
+                    "target": "b-judge",
+                    "targetHandle": "history"
+                  },
+                  {
+                    "id": "j-obs",
+                    "source": "b-critic",
+                    "sourceHandle": "observations",
+                    "target": "b-judge",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "j-decision",
+                    "source": "b-turn",
+                    "sourceHandle": "observations",
+                    "target": "b-judge",
+                    "targetHandle": "decision"
+                  },
+                  {
+                    "id": "gd-judge",
+                    "source": "b-judge",
+                    "sourceHandle": "observations",
+                    "target": "b-guard",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "gd-direct",
+                    "source": "b-direct",
+                    "sourceHandle": "observations",
+                    "target": "b-guard",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "out-a",
+                    "source": "b-guard",
+                    "sourceHandle": "answer",
+                    "target": "b-out",
+                    "targetHandle": "answer"
+                  },
+                  {
+                    "id": "out-cl",
+                    "source": "b-guard",
+                    "sourceHandle": "continueLoop",
+                    "target": "b-out",
+                    "targetHandle": "continueLoop"
+                  },
+                  {
+                    "id": "out-metrics",
+                    "source": "b-guard",
+                    "sourceHandle": "metrics",
+                    "target": "b-out",
+                    "targetHandle": "metrics"
+                  },
+                  {
+                    "id": "out-m",
+                    "source": "b-trigger",
+                    "sourceHandle": "message",
+                    "target": "b-out",
+                    "targetHandle": "message"
+                  },
+                  {
+                    "id": "out-h-judge",
+                    "source": "b-judge",
+                    "sourceHandle": "history",
+                    "target": "b-out",
+                    "targetHandle": "history"
+                  },
+                  {
+                    "id": "out-h-trigger",
+                    "source": "b-trigger",
+                    "sourceHandle": "history",
+                    "target": "b-out",
+                    "targetHandle": "history"
+                  },
+                  {
+                    "id": "out-c",
+                    "source": "b-trigger",
+                    "sourceHandle": "collectionId",
+                    "target": "b-out",
+                    "targetHandle": "collectionId"
+                  },
+                  {
+                    "id": "out-q-turn",
+                    "source": "b-turn",
+                    "sourceHandle": "query",
+                    "target": "b-out",
+                    "targetHandle": "query"
+                  },
+                  {
+                    "id": "out-q-message",
+                    "source": "b-trigger",
+                    "sourceHandle": "message",
+                    "target": "b-out",
+                    "targetHandle": "query"
+                  },
+                  {
+                    "id": "out-k",
+                    "source": "b-trigger",
+                    "sourceHandle": "topK",
+                    "target": "b-out",
+                    "targetHandle": "topK"
+                  },
+                  {
+                    "id": "out-obs",
+                    "source": "b-guard",
+                    "sourceHandle": "observations",
+                    "target": "b-out",
+                    "targetHandle": "observations"
+                  },
+                  {
+                    "id": "out-mode",
+                    "source": "b-trigger",
+                    "sourceHandle": "researchMode",
+                    "target": "b-out",
+                    "targetHandle": "researchMode"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "mode",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "sequential"
+            },
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "query",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "history",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "topK",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "researchMode",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "items"
+          ]
+        },
+        {
+          "id": "w-extract",
+          "label": "Last turn",
+          "position": {
+            "x": 760,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "system.object.extract",
+            "label": "Извлечение полей"
+          },
+          "config": [
+            {
+              "name": "map",
+              "type": "keyvalue",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "isPrimary": true,
+              "defaultValue": "{\"observations\":\"[-1].observations\",\"message\":\"[-1].message\",\"metrics\":\"[-1].metrics\"}"
+            },
+            {
+              "name": "source",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "observations",
+            "message",
+            "metrics"
+          ]
+        },
+        {
+          "id": "w-synth",
+          "label": "Synthesize",
+          "position": {
+            "x": 1000,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "plugin.rag.synthesize",
+            "label": "RAG: синтез ответа"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "answer"
+          ]
+        },
+        {
+          "id": "w-safe",
+          "label": "Safety",
+          "position": {
+            "x": 1240,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "plugin.rag.safety",
+            "label": "RAG: проверка перед выдачей"
+          },
+          "config": [
+            {
+              "name": "answer",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "answer"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1480,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Выход процесса"
+          },
+          "config": [
+            {
+              "name": "answer",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "metrics",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "answer",
+            "metrics"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "o1",
+          "source": "w-trigger",
+          "sourceHandle": "message",
+          "target": "w-task",
+          "targetHandle": "message"
+        },
+        {
+          "id": "o2",
+          "source": "w-trigger",
+          "sourceHandle": "history",
+          "target": "w-task",
+          "targetHandle": "history"
+        },
+        {
+          "id": "o3",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-schema",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "o4",
+          "source": "w-schema",
+          "sourceHandle": "inventory",
+          "target": "w-schema-ev",
+          "targetHandle": "inventory"
+        },
+        {
+          "id": "o5",
+          "source": "w-task",
+          "sourceHandle": "observations",
+          "target": "w-seed",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "o6",
+          "source": "w-schema-ev",
+          "sourceHandle": "evidence",
+          "target": "w-seed",
+          "targetHandle": "a"
+        },
+        {
+          "id": "o7",
+          "source": "w-trigger",
+          "sourceHandle": "message",
+          "target": "w-loop",
+          "targetHandle": "message"
+        },
+        {
+          "id": "o8",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-loop",
+          "targetHandle": "query"
+        },
+        {
+          "id": "o9",
+          "source": "w-trigger",
+          "sourceHandle": "history",
+          "target": "w-loop",
+          "targetHandle": "history"
+        },
+        {
+          "id": "o10",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-loop",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "o11",
+          "source": "w-trigger",
+          "sourceHandle": "topK",
+          "target": "w-loop",
+          "targetHandle": "topK"
+        },
+        {
+          "id": "o12",
+          "source": "w-seed",
+          "sourceHandle": "observations",
+          "target": "w-loop",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "o13",
+          "source": "w-task",
+          "sourceHandle": "mode",
+          "target": "w-loop",
+          "targetHandle": "researchMode"
+        },
+        {
+          "id": "o14",
+          "source": "w-loop",
+          "sourceHandle": "items",
+          "target": "w-extract",
+          "targetHandle": "source"
+        },
+        {
+          "id": "o15",
+          "source": "w-extract",
+          "sourceHandle": "message",
+          "target": "w-synth",
+          "targetHandle": "message"
+        },
+        {
+          "id": "o16",
+          "source": "w-extract",
+          "sourceHandle": "observations",
+          "target": "w-synth",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "o17",
+          "source": "w-synth",
+          "sourceHandle": "answer",
+          "target": "w-safe",
+          "targetHandle": "answer"
+        },
+        {
+          "id": "o18",
+          "source": "w-extract",
+          "sourceHandle": "observations",
+          "target": "w-safe",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "o19",
+          "source": "w-safe",
+          "sourceHandle": "answer",
+          "target": "w-output",
+          "targetHandle": "answer"
+        },
+        {
+          "id": "o20",
+          "source": "w-extract",
+          "sourceHandle": "metrics",
+          "target": "w-output",
+          "targetHandle": "metrics"
+        }
+      ]
+    }
+  ]
+}
