@@ -143,6 +143,36 @@ services:
       EXECUTOR_TCP_PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
       PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
 
+  rag:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: rag
+    image: ${RAG_PLUGIN_IMAGE:-plugin-rag:latest}
+    restart: unless-stopped
+    ports:
+      - '${RAG_EXECUTOR_TCP_PORT:-9406}:${RAG_EXECUTOR_TCP_PORT:-9406}'
+      - '${RAG_HEALTH_HTTP_PORT:-9407}:${RAG_HEALTH_HTTP_PORT:-9407}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${RAG_PLUGIN_PULL_ADVERTISED_HOST:-rag}
+      PLUGIN_TCP_PORT: ${RAG_EXECUTOR_TCP_PORT:-9406}
+      EXECUTOR_TCP_PORT: ${RAG_EXECUTOR_TCP_PORT:-9406}
+      PORT: ${RAG_EXECUTOR_TCP_PORT:-9406}
+      PLUGIN_HEALTH_HTTP_PORT: ${RAG_HEALTH_HTTP_PORT:-9407}
+      QDRANT_URL: ${RAG_QDRANT_URL:-http://rag-qdrant:6333}
+      NEO4J_URI: ${RAG_NEO4J_URI:-bolt://rag-neo4j:7687}
+      NEO4J_USER: ${RAG_NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${RAG_NEO4J_PASSWORD:-rag-neo4j-local}
+      RAG_DATA_DIR: ${RAG_DATA_DIR:-/data/rag}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://api.openai.com/v1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+
+# Full RAG stack with stores: use compose.rag.yml (preferred for local demo).
+
 # Подключение к уже существующей сети (имя = у plugin-manager / runtime-control-plane):
 #
 # networks:

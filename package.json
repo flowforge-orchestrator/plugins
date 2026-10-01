@@ -14,7 +14,8 @@
     "jira",
     "redmine",
     "llm",
-    "caldav"
+    "caldav",
+    "rag"
   ],
   "overrides": {
     "@kosolapus/plugin-ts-sdk": "0.0.10"

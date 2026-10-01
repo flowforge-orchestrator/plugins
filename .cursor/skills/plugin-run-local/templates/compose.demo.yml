@@ -28,10 +28,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-demo-jwt-insecure-change-me}
       PLUGIN_CONTROL_PLANE_KEY: ${PLUGIN_CONTROL_PLANE_KEY:-demo-internal-key}
       PLUGIN_MANAGER_INGRESS_TOKEN: ${PLUGIN_MANAGER_INGRESS_TOKEN:-demo-plugin-ingress}
-      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:8080}
-      TARIFF_DEMO_ENABLED: ${TARIFF_DEMO_ENABLED:-true}
-      DEMO_SEED_PASSWORD: ${DEMO_SEED_PASSWORD:-Test123456!}
-      DEMO_SEED_USERS: ${DEMO_SEED_USERS:-true}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-null}
+      ENTITLEMENT_PROVIDER: ${ENTITLEMENT_PROVIDER:-allow-all}
+      SECRET_BACKEND: ${SECRET_BACKEND:-local}
+      PUBLIC_SITE_URL: ${AUTH_PROVIDER: ${AUTH_PROVIDER:-null}
+      ENTITLEMENT_PROVIDER: ${ENTITLEMENT_PROVIDER:-allow-all}
+      SECRET_BACKEND: ${SECRET_BACKEND:-local}
+      PUBLIC_SITE_URL:-http://localhost:8080}
     volumes:
       - demo_pgdata:/var/lib/postgresql/data
       - demo_files:/data/files

@@ -1,0 +1,20 @@
+export type FormIslandHostApi = {
+  hasBinding: { value: boolean };
+  diagramId: { value: string };
+  portalPending: { value: boolean };
+  portalError: { value: string | null };
+  portalEnabled: { value: boolean };
+  needsAuthForDiagramPortal: { value: boolean };
+  formPending: { value: boolean };
+  formLoadError: { value: string | null };
+  formTitle: { value: string | null };
+  isSubmitting: { value: boolean };
+  lastLaunchRunId: { value: string | null };
+  submitLaunch: (payload: Record<string, unknown>) => Promise<string | null>;
+  latestResult: { value: unknown };
+  latestRunStatus: { value: string | null };
+  latestRunId?: { value: string | null };
+  detailHint?: { value: string | null };
+  runSummaries?: { value: unknown[] };
+  reloadRuns: () => Promise<void>;
+};
