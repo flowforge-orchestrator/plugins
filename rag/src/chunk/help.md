@@ -1,11 +1,32 @@
 # RAG: нарезать чанки
 
-Рекурсивная нарезка по заголовкам и абзацам. Семантическая стратегия использует тот же контракт.
+Структурная нарезка блоков в чанки с overlap и parentId.
 
-## Входы
+## Зачем
 
-blocks, docId; статические strategy, maxTokens, overlapTokens, hardMaxTokens.
+Векторный индекс и последующий поиск работают с чанками ограниченной длины, а не с целым файлом.
+
+## Параметры
+
+| Поле | Тип | Порт | Обязательно | Описание |
+| --- | --- | --- | --- | --- |
+| **Блоки** (`blocks`) | `textarea` | да | да | Блоки |
+| **ID документа** (`docId`) | `string` | да | да | ID документа |
+| **Стратегия** (`strategy`) | `select` | static | нет | recursive | semantic |
+| **Макс. токенов** (`maxTokens`) | `number` | static | нет | Макс. токенов |
+| **Overlap токенов** (`overlapTokens`) | `number` | static | нет | Overlap токенов |
+| **Жёсткий потолок** (`hardMaxTokens`) | `number` | static | нет | Жёсткий потолок |
 
 ## Выходы
 
-chunks, lengthHistogram, emptyShare, forcedCutShare, chunkCount.
+| Поле | Тип | Описание |
+| --- | --- | --- |
+| **Чанки** (`chunks`) | `textarea` | Чанки |
+| **Гистограмма длин** (`lengthHistogram`) | `keyvalue` | Гистограмма длин |
+| **Доля пустых** (`emptyShare`) | `number` | Доля пустых |
+| **Доля вынужденных разрезов** (`forcedCutShare`) | `number` | Доля вынужденных разрезов |
+| **Число чанков** (`chunkCount`) | `number` | Число чанков |
+
+## Ошибки
+
+Пустые blocks; неверная стратегия нарезки.

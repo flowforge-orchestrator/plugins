@@ -1,16 +1,22 @@
 # RAG: ответ LLM
 
-Генерирует ответ на вопрос пользователя **только** по переданному `context`
-(обычно выход `plugin.rag.search.query`) и опциональной `history` диалога.
-К векторному индексу и графу не ходит.
+Генерирует ответ пользователю по контексту поиска и истории диалога (без прямого доступа к корпусу).
 
-## Типовой граф чата
+## Зачем
 
-`system.trigger.input` → `plugin.rag.search.query` → `plugin.rag.answer` → `system.output`
+Линейный отладочный генератор ответа без полного research-контура.
 
-Поля триггера: `query` (для поиска, можно обогатить follow-up), `message` (сырая реплика),
-`history` (JSON `[{role,text}]`), `collectionId`, `topK`.
+## Параметры
 
-## Форма воркспейса
+| Поле | Тип | Порт | Обязательно | Описание |
+| --- | --- | --- | --- | --- |
+| **Вопрос** (`message`) | `textarea` | да | да | Вопрос |
+| **Контекст** (`context`) | `textarea` | да | да | Собранный текст из поиска (plugin.rag.search.query → context) |
+| **История диалога** (`history`) | `textarea` | да | нет | JSON-массив {role,text} предыдущих реплик (без текущего вопроса) |
+| **API ключ LLM** (`apiKey`) | `ref` | static | нет | API ключ LLM |
 
-`:ff-plugin-form{plugin-id="rag" form-id="ask" diagram-id="…" public-portal-slug="…"}`
+## Выходы
+
+| Поле | Тип | Описание |
+| --- | --- | --- |
+| **Ответ** (`answer`) | `textarea` | Ответ |

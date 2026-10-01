@@ -1,56 +1,80 @@
 # @conveyor/plugin-rag
 
-Document RAG for Conveyor: chunk and index files into a plugin-owned vector store and knowledge graph, search the corpus, and run an ask agent that retrieves only through the search executor.
+**RAG по документам** — плагин Conveyor, который превращает файлы в отвечающий корпус: индексирует их в свой векторный индекс и граф знаний, ищет по ним и ведёт диалог, где ответ опирается на найденные фрагменты, а не на догадки модели.
 
-## Purpose
+## Назначение
 
-The plugin packages indexing, ontology enrichment, hybrid search, and a retrieval agent as Conveyor executors. Qdrant and Neo4j stay inside the plugin compose network. The platform sees `plugin.rag.*` node contracts, node `ref` secrets, manifest `variables` labels, and three workspace forms (`index`, `search`, `ask`).
+Sidecar закрывает документный контур целиком. Ядру не нужно знать про эмбеддинги, чанки и граф — так же, как Telegram живёт рядом ради сообщений, этот плагин живёт рядом ради корпуса документов.
 
-Secrets are node `ref` fields (`OPENAI_API_KEY` kind for embedding and chat). Store URLs (`QDRANT_URL`, `NEO4J_URI`) come from container env. Manifest `variables` (`embeddingModel`, `llmModel`) appear on the Plugins tab; in v1 executors still read `EMBEDDING_MODEL` / `LLM_MODEL` from env because the runtime does not inject plugin variable values into `ExecContext`.
+На выходе платформа видит узлы `plugin.rag.*`, workspace-формы (индекс, поиск, чат, статистика) и пресет `rag` с тремя процессами: индексация, поиск, чат. Хранилища **Qdrant** и **Neo4j** остаются в контуре плагина. Секреты LLM/эмбеддингов — node `ref` (`OPENAI_API_KEY`). URL сторов (`QDRANT_URL`, `NEO4J_URI`) и модели (`EMBEDDING_MODEL`, `LLM_MODEL`, …) приходят из env контейнера; манифестные `variables` отображаются на вкладке Plugins, но в v1 исполнители читают env.
 
-## Nodes
+Контур ответа: рамка вопроса → ход агента → предложение значений полей → claims → критик → судья → гард. Поле без подтверждённого фрагмента не считается ответом; нехватка данных закрывает цикл через `unresolvedQuestions`, а не через выдумку.
 
-| nodeType | Name | Description |
+## Где лежит
+
+| | |
+| --- | --- |
+| Пакет | [`rag/`](.) в репозитории `flowforge-orchestrator/plugins` |
+| Соседи | Рядом с jira, telegram, llm, email и остальными sidecar-плагинами |
+| Локальный стек со сторами | [`../compose.rag.yml`](../compose.rag.yml) + [`../compose.rag.env.example`](../compose.rag.env.example) |
+| Внешнее ядро | сервис `rag` в [`../docker-compose.yml`](../docker-compose.yml) |
+
+В quick-start [`../compose.demo.yml`](../compose.demo.yml) плагин **не** поднимается сам — его подключают отдельно, когда нужны документный индекс и ask-агент.
+
+## Узлы
+
+| nodeType | Название | Описание |
 | --- | --- | --- |
-| `plugin.rag.extract` | RAG: извлечь документ | Text/URL → document blocks |
-| `plugin.rag.chunk` | RAG: нарезать чанки | Structural chunking |
-| `plugin.rag.ontology.propose.entities` | RAG: предложить типы сущностей | LLM entity type candidates |
-| `plugin.rag.ontology.propose.relations` | RAG: предложить типы связей | LLM relation type candidates |
-| `plugin.rag.ontology.merge` | RAG: слить онтологию | Schema merge + version bump |
-| `plugin.rag.ontology.lookup` | RAG: lookup онтологии | Schema types and entities whose label contains the whole query |
-| `plugin.rag.graph.query` | RAG: обход графа | Parameterized Cypher neighborhood of the entity, node, or relation named in the query |
-| `plugin.rag.graph.prepare` | RAG: инвентарь коллекции | Every document of the collection: `docId` and stored title |
-| `plugin.rag.entity.extract` | RAG: извлечь упоминания | Mentions into closed schema |
-| `plugin.rag.entity.resolve` | RAG: разрешить сущности | Canonical entities + rebind |
-| `plugin.rag.relation.extract` | RAG: извлечь связи | Relations with evidence |
-| `plugin.rag.index.write` | RAG: записать индекс | Embed + upsert vector/graph |
-| `plugin.rag.search.query` | RAG: поиск | Hybrid search; one `topK`; honours `frame.skipRetrieval` |
-| `plugin.rag.rerank` | RAG: реранк | LLM/Ollama rerank + doc diversity |
-| `plugin.rag.topic` | RAG: рамка вопроса | Model-written frame: population (collection / named / none), slots, entity, skipRetrieval |
-| `plugin.rag.agent.plan` | RAG: стратегия | Select of plugin strategies; output `strategy` into the agent turn |
-| `plugin.rag.provider.search` | RAG: провайдер поиска | Search card; collection id and topK live here |
-| `plugin.rag.provider.graph` | RAG: провайдер графа | Graph card; collection id lives here |
-| `plugin.rag.provider.ontology` | RAG: провайдер онтологии | Ontology card; collection id lives here |
-| `plugin.rag.provider.prepare` | RAG: провайдер инвентаря | Inventory card (`inventory`); collection id lives here |
-| `plugin.rag.provider.topic` | RAG: провайдер рамки вопроса | Frame card |
-| `plugin.rag.provider.rerank` | RAG: провайдер реранка | Rerank card; topK and maxPerDoc |
-| `plugin.rag.tool.router` | RAG: роутер инструментов | Merges provider cards into the agent `tools` input |
-| `plugin.rag.agent.turn` | RAG: ход агента | Model returns an ordered `actions` set and a draft; the turn runs the set in order and threads `observations` |
-| `plugin.rag.slot.propose` | RAG: значения полей | Model copies one span per open field from one evidence record, or leaves the field out |
-| `plugin.rag.claims` | RAG: claims из предложений | Keeps a proposal only when its span lies inside the named evidence record |
-| `plugin.rag.slot.critic` | RAG: критик полей | Model confirms a span states its field; a rejected span leaves the field open |
-| `plugin.rag.judge` | RAG: судья | Code check of claims against evidence: copy, parents of derived values, conflicts, missing fields |
-| `plugin.rag.guard` | RAG: гард цикла | `continueLoop` from the verdict, conflict, `skipRetrieval`, or `maxTurns`; answer passes through |
-| `plugin.rag.answer` | RAG: ответ LLM | Thin generator (linear debug) |
+| `plugin.rag.extract` | RAG: извлечь документ | Текст/URL → блоки документа |
+| `plugin.rag.chunk` | RAG: нарезать чанки | Структурная нарезка |
+| `plugin.rag.ontology.propose.entities` | RAG: предложить типы сущностей | Кандидаты типов из LLM |
+| `plugin.rag.ontology.propose.relations` | RAG: предложить типы связей | Кандидаты связей из LLM |
+| `plugin.rag.ontology.merge` | RAG: слить онтологию | Слияние схемы + версия |
+| `plugin.rag.ontology.lookup` | RAG: lookup онтологии | Срез типов и сущностей по запросу |
+| `plugin.rag.graph.query` | RAG: обход графа | Окрестность сущности/связи |
+| `plugin.rag.graph.prepare` | RAG: инвентарь коллекции | Список документов коллекции |
+| `plugin.rag.entity.extract` | RAG: извлечь упоминания | Упоминания в закрытой схеме |
+| `plugin.rag.entity.resolve` | RAG: разрешить сущности | Канонические сущности |
+| `plugin.rag.relation.extract` | RAG: извлечь связи | Связи с evidence |
+| `plugin.rag.index.write` | RAG: записать индекс | Эмбеддинг + upsert вектор/граф |
+| `plugin.rag.search.query` | RAG: поиск | Гибридный поиск; учитывает `skipRetrieval` |
+| `plugin.rag.rerank` | RAG: реранк | LLM-реранк + разнообразие по документам |
+| `plugin.rag.topic` | RAG: рамка вопроса | Охват, слоты, сущность, skipRetrieval |
+| `plugin.rag.agent.plan` | RAG: стратегия | Выбор стратегии → порт `strategy` |
+| `plugin.rag.provider.search` | RAG: провайдер поиска | Карточка поиска |
+| `plugin.rag.provider.graph` | RAG: провайдер графа | Карточка графа |
+| `plugin.rag.provider.ontology` | RAG: провайдер онтологии | Карточка онтологии |
+| `plugin.rag.provider.prepare` | RAG: провайдер инвентаря | Карточка инвентаря |
+| `plugin.rag.provider.topic` | RAG: провайдер рамки | Карточка рамки |
+| `plugin.rag.provider.rerank` | RAG: провайдер реранка | Карточка реранка |
+| `plugin.rag.provider.aggregate` | RAG: провайдер агрегации | Карточка агрегации |
+| `plugin.rag.provider.calculate` | RAG: провайдер вычисления | Карточка вычисления |
+| `plugin.rag.tool.router` | RAG: роутер инструментов | Карточки → вход `tools` хода |
+| `plugin.rag.agent.turn` | RAG: ход агента | Одна операция на итерацию цикла |
+| `plugin.rag.evidence.hits` | RAG: evidence из поиска | Хиты → observation evidence |
+| `plugin.rag.evidence.inventory` | RAG: evidence из схемы | Инвентарь → evidence |
+| `plugin.rag.evidence.text` | RAG: evidence из текста | Текст инструмента → evidence |
+| `plugin.rag.evidence.merge` | RAG: объединить evidence | Слияние без дублей id |
+| `plugin.rag.aggregate` | RAG: агрегировать | count/sum/min/max по evidence |
+| `plugin.rag.calculate` | RAG: вычислить | add/sub/mul/div двух evidence |
+| `plugin.rag.slot.propose` | RAG: значения полей | Дословный фрагмент на открытое поле |
+| `plugin.rag.claims` | RAG: claims из предложений | Claim только при span внутри записи |
+| `plugin.rag.slot.critic` | RAG: критик полей | Подтверждает, что фрагмент называет поле |
+| `plugin.rag.judge` | RAG: судья | Код-проверка claims против evidence |
+| `plugin.rag.guard` | RAG: гард цикла | `continueLoop` / ответ насквозь |
+| `plugin.rag.synthesize` | RAG: синтез ответа | Ответ из supported claims и ограничений |
+| `plugin.rag.safety` | RAG: проверка перед выдачей | Отсев необоснованных claims |
+| `plugin.rag.answer` | RAG: ответ LLM | Тонкий генератор (линейный debug) |
 
-Per-executor details: each folder’s `help.md`.
+Справка по полям — `help.md` рядом с каждым исполнителем (`src/**/help.md`).
 
-## Editor configuration
+## Конфигурация в редакторе
 
-1. Enable the **RAG по документам** plugin on the Plugins tab.
-2. Bind `ref` secrets on LLM/embedding fields of the nodes you use.
-3. Set `collectionId` / `docId` / strategy / `topK` as static fields or ports.
-4. Workspace islands:
+1. Включите плагин **RAG по документам** на вкладке Plugins.
+2. Привяжите `ref`-секреты на полях LLM/эмбеддингов используемых узлов.
+3. Задайте `collectionId` / `docId` / стратегию / `topK` static-полями или портами.
+4. Импортируйте пресет `rag` (каталог preset-service) — папка из трёх процессов: index, search, chat.
+5. Острова workspace:
 
 ```md
 :ff-plugin-form{plugin-id="rag" form-id="index" diagram-id="…" refresh-interval="5000"}
@@ -59,44 +83,47 @@ Per-executor details: each folder’s `help.md`.
 :ff-plugin-form{plugin-id="rag" form-id="stats-chat" diagram-id="…" refresh-interval="8000"}
 ```
 
-Forms: `index` (DOC/PDF/image/ZIP), `ask` (chat), `stats-pipeline`, `stats-chat`, plus `search`.
+Формы: `index`, `ask`, `search`, `stats-pipeline`, `stats-chat`.
 
-Builtin preset `rag` (`presets/rag.json`, catalog id `rag`) is one folder of three processes: index, search, chat. Register it via the Presets tab.
+### Чат (`rag-chat`)
 
-Chat process (`rag-chat`): schema (`graph.prepare` → evidence) and question frame (`topic`, mode `direct|retrieval|analysis|research`) run once, then `system.loop`. Inside the loop, `system.control.switch` opens one arm. `direct` forwards observations and stops. `retrieval`, `analysis`, and `research` share the turn. One `op` per iteration runs `search`, `graph`, `ontology`, `aggregate`, or `calculate` on the diagram. Search hits are candidates, not field values. `slot.propose` asks the model for one verbatim span per open field from one evidence record, or nothing; `claims` keeps a proposal only when the span lies inside the record it names; `slot.critic` asks the model whether that span states the field and drops the claim otherwise; `judge` checks the claim records in code. An open field does not end the loop: the next turn queries it, or records it on `unresolvedQuestions` when it was already asked and no claim was accepted. That decision belongs to the turn, not to propose or critic. `analysis` and `research` call the planner model only when their queue is empty; `retrieval` does not. The loop closes when the verdict is complete, a value conflict is explicit, or `maxTurns` is spent. The arm that produced values fills the single `system.output`. After the loop, `synthesize` writes the answer from supported claims, hypotheses, and limitations (`direct` answers the message without the corpus), and `safety` checks the claim records. The turn does not call tools.
+Схема (`graph.prepare` → evidence) и рамка вопроса (`topic`) выполняются один раз, затем `system.loop`. Внутри цикла `system.control.switch` открывает одну ветку. `direct` пропускает observations и останавливается. `retrieval` / `analysis` / `research` делят ход агента. Хиты поиска — кандидаты, не значения полей. Цепочка `slot.propose` → `claims` → `slot.critic` → `judge` наполняет и проверяет контракт; решение досбора или сдачи поля принадлежит следующему ходу. Цикл закрывает `guard`, когда вердикт complete, конфликт явен или исчерпан `maxTurns`. После цикла `synthesize` пишет ответ, `safety` проверяет claims. Ход агента сам в Qdrant/Neo4j не ходит.
 
-`plugin.rag.agent.turn` never talks to Qdrant/Neo4j; retrieval nodes do.
+## Для разработчика
 
-## For developers
+**Пакет:** `@conveyor/plugin-rag` · **pluginId:** `rag` · префикс узлов `plugin.rag.`
 
-- Package: `@conveyor/plugin-rag`, `pluginId` `rag`, prefix `plugin.rag.`
-- Layout: `src/` executors + adapters, `ui/` forms, `presets/`, `scripts/build-ui.mjs`
-- Build: `npm run build -w @conveyor/plugin-rag`
-- Test: `npm test -w @conveyor/plugin-rag`
-- Default ports: executor TCP **9406**, asset HTTP **9407**
-- Env sample: `env.example`
-- Local stack with stores against demo:
+**Структура:**
+
+```
+rag/
+  src/           исполнители, адаптеры, research/
+  ui/            формы workspace
+  presets/       rag.json, rag-chat.json, …
+  scripts/       build-ui.mjs, build-rag-chat-loop.py
+  env.example
+```
+
+**Сборка и тесты:**
 
 ```bash
-# demo already up (Hub: flowforge-demo_default, tokens often key/key)
+npm run build -w @conveyor/plugin-rag
+npm test -w @conveyor/plugin-rag
+```
+
+**Порты по умолчанию:** executor TCP **9406**, asset HTTP **9407**.
+
+**Локальный стек со сторами** (demo уже поднят, сеть `flowforge-demo_default`, токены часто `key`/`key`):
+
+```bash
 docker compose -f compose.rag.yml --env-file compose.rag.env.example up -d --build
 ```
 
-Ollama must listen on the host (`embeddinggemma:latest`, `gemma4:12b-mlx`, `qwen3:0.6b` rerank by default). The sidecar reaches it via `host.docker.internal`.
+Ollama на хосте (`embeddinggemma:latest`, LLM и rerank из `compose.rag.env.example`); sidecar достучится через `host.docker.internal`.
 
-External core without the bundled stores: service `rag` in root `docker-compose.yml` (point `QDRANT_URL` / `NEO4J_*` at reachable stores).
+**Обновление после пересборки:** (1) отключите и удалите плагин в UI под администратором → (2) перезапустите sidecar → (3) включите плагин под пользователем workspace. В логах sidecar — новый `publicationVersion`; в plugin-manager — `plugin_publication_committed` и `plugin_static_cached`.
 
-### Plugin update (after rebuild)
-
-1. Disable and remove the plugin in the UI (Plugins tab, administrator).
-2. Restart the sidecar (`docker compose -f compose.rag.yml up -d --build rag`).
-3. Enable the plugin again under the target workspace user.
-
-Verify: sidecar logs show the new `publicationVersion`; plugin-manager logs `plugin_publication_committed` and `plugin_static_cached`; nodes appear online in the palette.
-
-### Local Ollama smoke
-
-With Ollama running (`embeddinggemma:latest` + `gemma4:12b-mlx`) and host Qdrant/Neo4j:
+**Ollama smoke** (хостовые Qdrant/Neo4j + модели):
 
 ```bash
 RUN_OLLAMA_SMOKE=1 npm test -w @conveyor/plugin-rag -- ollama.smoke --runInBand
