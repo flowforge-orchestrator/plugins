@@ -1,5 +1,4 @@
 import { Allow, IsString, MinLength } from 'class-validator';
-import { createHash } from 'crypto';
 import {
   ExecContext,
   Executor,
@@ -15,6 +14,13 @@ import type {
   RagChunk,
 } from '../../contracts/types';
 import { fromJsonPort, toJsonPort } from '../../internal/json-port';
+import { batchLeafChunks, materializeSpoRelations, type SpoTriple } from '../../spo/spo.logic';
+import {
+  createSynonymDictionary,
+  DEFAULT_NARRATIVE_SYNONYMS,
+} from '../../spo/synonym.logic';
+
+const BATCH_SIZE = 4;
 
 class InputDto {
   @Allow()
@@ -82,7 +88,8 @@ class OutputDto {
 @Executor<InputDto, OutputDto>({
   nodeType: 'plugin.rag.relation.extract',
   name: 'RAG: извлечь связи',
-  description: 'Извлекает связи между каноническими сущностями по схеме.',
+  description:
+    'Per-chunk SPO (Subject/Predicate/Object); predicate → typeId через словарь синонимов.',
   help,
   pluginId: 'rag',
   inputs: InputDto,
@@ -95,87 +102,95 @@ class OutputDto {
 export class RagRelationExtractExecutor {
   async execute(ctx: ExecContext<InputDto>): Promise<OutputDto> {
     const services = getRagServices();
-    const entities = fromJsonPort(ctx.inputs.entities, [] as typeof ctx.inputs.entities);
+    const entities = fromJsonPort(
+      ctx.inputs.entities,
+      [] as typeof ctx.inputs.entities,
+    );
     const schema = fromJsonPort(ctx.inputs.schema, ctx.inputs.schema);
-    const chunks = fromJsonPort(ctx.inputs.chunks, [] as NonNullable<typeof ctx.inputs.chunks>);
-    const byId = new Map(entities.map((e) => [e.entityId, e]));
-    const byLabel = new Map(
-      entities.map((e) => [e.label.trim().toLowerCase(), e]),
+    const chunks = fromJsonPort(
+      ctx.inputs.chunks,
+      [] as NonNullable<typeof ctx.inputs.chunks>,
     );
-    const allowed = new Set(
-      schema.relationTypes.map((r) => r.id),
-    );
-    const payload = await services.llm.completeJson<{
-      relations?: Array<{
-        typeId: string;
-        fromLabel?: string;
-        toLabel?: string;
-        fromEntityId?: string;
-        toEntityId?: string;
-        chunkId: string;
-        evidence?: string;
-      }>;
-    }>({
-      apiKey: ctx.inputs.apiKey,
-      systemPrompt:
-        'Extract up to 8 relations. Return JSON {"relations":[{"typeId","fromEntityId|fromLabel","toEntityId|toLabel","chunkId","evidence"}]}. Use only provided relationTypes and entities.',
-      userPrompt: JSON.stringify(
-        {
-          relationTypeIds: schema.relationTypes.map((r) => r.id),
-          entities: entities.slice(0, 12).map((e) => ({
-            entityId: e.entityId,
-            typeId: e.typeId,
-            label: e.label,
-          })),
-          chunks: chunks.slice(0, 4).map((c) => ({
-            chunkId: c.chunkId,
-            docId: c.docId,
-            text: c.text.slice(0, 350),
-          })),
-        },
-        null,
-        2,
-      ),
+    const allowed = schema.relationTypes.map((r) => r.id);
+    const dict = createSynonymDictionary({
+      entities: [
+        ...DEFAULT_NARRATIVE_SYNONYMS.entities,
+        ...entities.map((e) => ({
+          canonical: e.label,
+          aliases: e.aliases ?? [],
+        })),
+      ],
+      predicates: [
+        ...DEFAULT_NARRATIVE_SYNONYMS.predicates,
+        ...allowed.map((typeId) => ({ typeId, aliases: [] as string[] })),
+      ],
     });
 
-    const relations: EntityRelation[] = [];
+    const batches = batchLeafChunks(chunks, BATCH_SIZE);
+    const triples: SpoTriple[] = [];
     let withoutEvidence = 0;
-    for (const raw of payload.relations ?? []) {
-      if (!allowed.has(raw.typeId)) continue;
-      const from =
-        (raw.fromEntityId && byId.get(raw.fromEntityId)) ||
-        (raw.fromLabel && byLabel.get(raw.fromLabel.trim().toLowerCase()));
-      const to =
-        (raw.toEntityId && byId.get(raw.toEntityId)) ||
-        (raw.toLabel && byLabel.get(raw.toLabel.trim().toLowerCase()));
-      if (!from || !to) continue;
-      const chunk =
-        chunks.find((c) => c.chunkId === raw.chunkId) ??
-        chunks[0];
-      if (!chunk) continue;
-      if (!raw.evidence?.trim()) withoutEvidence += 1;
-      const relationId = createHash('sha256')
-        .update(
-          `${raw.typeId}:${from.entityId}:${to.entityId}:${chunk.chunkId}`,
-        )
-        .digest('hex')
-        .slice(0, 24);
-      relations.push({
-        relationId,
-        typeId: raw.typeId,
-        fromEntityId: from.entityId,
-        toEntityId: to.entityId,
-        chunkId: chunk.chunkId,
-        docId: chunk.docId,
-        evidence: raw.evidence,
+    let rawTotal = 0;
+
+    for (const batch of batches) {
+      const payload = await services.llm.completeJson<{
+        triples?: Array<{
+          subject: string;
+          predicate: string;
+          object: string;
+          chunkId: string;
+          evidence?: string;
+        }>;
+      }>({
+        apiKey: ctx.inputs.apiKey,
+        systemPrompt:
+          'For EACH chunk extract ALL factual Subject-Predicate-Object triples grounded in the text. Return JSON {"triples":[{"subject","predicate","object","chunkId","evidence"}]}. Prefer relationTypeIds when predicate matches; otherwise use a short verb phrase as predicate. subject/object should be entity surfaces from the chunk.',
+        userPrompt: JSON.stringify(
+          {
+            relationTypeIds: allowed,
+            entities: entities.map((e) => ({
+              entityId: e.entityId,
+              typeId: e.typeId,
+              label: e.label,
+              aliases: e.aliases ?? [],
+            })),
+            chunks: batch.map((c) => ({
+              chunkId: c.chunkId,
+              docId: c.docId,
+              text: c.text.slice(0, 500),
+            })),
+          },
+          null,
+          2,
+        ),
       });
+
+      for (const raw of payload.triples ?? []) {
+        rawTotal += 1;
+        const chunk =
+          batch.find((c) => c.chunkId === raw.chunkId) ?? batch[0];
+        if (!chunk) continue;
+        if (!raw.evidence?.trim()) withoutEvidence += 1;
+        triples.push({
+          subject: raw.subject,
+          predicate: raw.predicate,
+          object: raw.object,
+          chunkId: chunk.chunkId,
+          docId: chunk.docId,
+          evidence: raw.evidence,
+        });
+      }
     }
+
+    const relations = materializeSpoRelations({
+      triples,
+      entities,
+      allowedRelationTypeIds: allowed,
+      dict,
+    });
+
     return {
       relations: toJsonPort(relations) as never,
-      withoutEvidenceShare:
-        (payload.relations?.length ?? 0) === 0
-          ? 0
-          : withoutEvidence / (payload.relations?.length ?? 1),
+      withoutEvidenceShare: rawTotal === 0 ? 0 : withoutEvidence / rawTotal,
     };
   }
 }

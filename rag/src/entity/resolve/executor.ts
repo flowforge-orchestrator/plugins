@@ -1,4 +1,11 @@
-import { Allow, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  Allow,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  MinLength,
+} from 'class-validator';
 import {
   ExecContext,
   Executor,
@@ -13,6 +20,7 @@ import type {
   EntityMention,
   SchemaDelta,
 } from '../../contracts/types';
+import type { EntityDecision } from '../../contracts/knowledge';
 import { fromJsonPort, toJsonPort } from '../../internal/json-port';
 
 class InputDto {
@@ -47,12 +55,28 @@ class InputDto {
     required: true,
   })
   collectionId!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @FieldDecorator({
+    type: 'number',
+    label: 'Порог неоднозначности',
+    description: 'Минимальный зазор score до второго кандидата',
+    static: true,
+    default: 0.15,
+  })
+  ambiguityThreshold?: number;
 }
 
 class OutputDto {
   @Allow()
   @FieldDecorator({ type: 'textarea', label: 'Сущности' })
   entities!: CanonicalEntity[];
+
+  @Allow()
+  @FieldDecorator({ type: 'textarea', label: 'Решения' })
+  decisions!: EntityDecision[];
 
   @FieldDecorator({ type: 'number', label: 'Склеено' })
   merged!: number;
@@ -67,7 +91,7 @@ class OutputDto {
 @Executor<InputDto, OutputDto>({
   nodeType: 'plugin.rag.entity.resolve',
   name: 'RAG: разрешить сущности',
-  description: 'Склеивает упоминания в канонические сущности и перепривязывает по дельте.',
+  description: 'Склеивает упоминания в канонические сущности и отдаёт EntityDecision.',
   help,
   pluginId: 'rag',
   inputs: InputDto,
@@ -87,6 +111,7 @@ export class RagEntityResolveExecutor {
       mentions: fromJsonPort(ctx.inputs.mentions, []),
       existing,
       delta: fromJsonPort(ctx.inputs.delta, undefined),
+      ambiguityThreshold: ctx.inputs.ambiguityThreshold,
     });
     await services.ontology.saveEntities(
       ctx.inputs.collectionId,
@@ -95,6 +120,7 @@ export class RagEntityResolveExecutor {
     return {
       ...result,
       entities: toJsonPort(result.entities) as never,
+      decisions: toJsonPort(result.decisions) as never,
     };
   }
 }

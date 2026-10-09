@@ -7,6 +7,13 @@
 # Then from plugins repo root:
 #   docker compose -f compose.rag.yml --env-file compose.rag.env.example up -d --build
 #
+# Stores:
+#   rag_plugin_data → RAG_DATA_DIR (/data/rag) — durable S0–S2 (Evidence, Claim, ontology)
+#   rag-qdrant / rag-neo4j — S3 projection (QDRANT_URL / NEO4J_URI)
+#
+# Nested process.call (interpret/resolve + LLM): set PROCESS_CALL_TIMEOUT_MS > 120000
+# on the demo runtime (not this sidecar). See compose.rag.env.example.
+#
 # Default network: flowforge-demo_default (conveyor-release/demo).
 # Override DEMO_NETWORK_NAME for compose.demo.yml (conveyor-plugins-demo_default).
 

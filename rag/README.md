@@ -6,7 +6,7 @@
 
 Sidecar закрывает документный контур целиком. Ядру не нужно знать про эмбеддинги, чанки и граф — так же, как Telegram живёт рядом ради сообщений, этот плагин живёт рядом ради корпуса документов.
 
-На выходе платформа видит узлы `plugin.rag.*`, workspace-формы (индекс, поиск, чат, статистика) и пресет `rag` с тремя процессами: индексация, поиск, чат. Хранилища **Qdrant** и **Neo4j** остаются в контуре плагина. Секреты LLM/эмбеддингов — node `ref` (`OPENAI_API_KEY`). URL сторов (`QDRANT_URL`, `NEO4J_URI`) и модели (`EMBEDDING_MODEL`, `LLM_MODEL`, …) приходят из env контейнера; манифестные `variables` отображаются на вкладке Plugins, но в v1 исполнители читают env.
+На выходе платформа видит узлы `plugin.rag.*`, workspace-формы (индекс, поиск, чат, статистика) и пресет `rag` с тремя процессами: индексация, поиск, чат. Долговременный канон **S0–S2** (Evidence, Claim, онтология) лежит в **`RAG_DATA_DIR`** (в compose — volume `rag_plugin_data` → `/data/rag`). **Qdrant** и **Neo4j** — проекция **S3** (`QDRANT_URL`, `NEO4J_URI`). Секреты LLM/эмбеддингов — node `ref` (`OPENAI_API_KEY`). URL сторов и модели (`EMBEDDING_MODEL`, `LLM_MODEL`, …) приходят из env контейнера; манифестные `variables` отображаются на вкладке Plugins, но в v1 исполнители читают env.
 
 Контур ответа: рамка вопроса → ход агента → предложение значений полей → claims → критик → судья → гард. Поле без подтверждённого фрагмента не считается ответом; нехватка данных закрывает цикл через `unresolvedQuestions`, а не через выдумку.
 
@@ -26,7 +26,7 @@ Sidecar закрывает документный контур целиком. �
 | nodeType | Название | Описание |
 | --- | --- | --- |
 | `plugin.rag.extract` | RAG: извлечь документ | Текст/URL → блоки документа |
-| `plugin.rag.chunk` | RAG: нарезать чанки | Структурная нарезка |
+| `plugin.rag.chunk` | RAG: нарезать чанки | Иерархия doc→section→paragraph→leaf(~400) |
 | `plugin.rag.ontology.propose.entities` | RAG: предложить типы сущностей | Кандидаты типов из LLM |
 | `plugin.rag.ontology.propose.relations` | RAG: предложить типы связей | Кандидаты связей из LLM |
 | `plugin.rag.ontology.merge` | RAG: слить онтологию | Слияние схемы + версия |
@@ -37,7 +37,7 @@ Sidecar закрывает документный контур целиком. �
 | `plugin.rag.entity.resolve` | RAG: разрешить сущности | Канонические сущности |
 | `plugin.rag.relation.extract` | RAG: извлечь связи | Связи с evidence |
 | `plugin.rag.index.write` | RAG: записать индекс | Эмбеддинг + upsert вектор/граф |
-| `plugin.rag.search.query` | RAG: поиск | Гибридный поиск; учитывает `skipRetrieval` |
+| `plugin.rag.search.query` | RAG: поиск | Intent/сущности → граф приоритетнее dense |
 | `plugin.rag.rerank` | RAG: реранк | LLM-реранк + разнообразие по документам |
 | `plugin.rag.topic` | RAG: рамка вопроса | Охват, слоты, сущность, skipRetrieval |
 | `plugin.rag.agent.plan` | RAG: стратегия | Выбор стратегии → порт `strategy` |
@@ -79,11 +79,14 @@ Sidecar закрывает документный контур целиком. �
 ```md
 :ff-plugin-form{plugin-id="rag" form-id="index" diagram-id="…" refresh-interval="5000"}
 :ff-plugin-form{plugin-id="rag" form-id="ask" diagram-id="…" refresh-interval="4000"}
+:ff-plugin-form{plugin-id="rag" form-id="validate" diagram-id="…" refresh-interval="5000"}
 :ff-plugin-form{plugin-id="rag" form-id="stats-pipeline" diagram-id="…" refresh-interval="8000"}
 :ff-plugin-form{plugin-id="rag" form-id="stats-chat" diagram-id="…" refresh-interval="8000"}
 ```
 
-Формы: `index`, `ask`, `search`, `stats-pipeline`, `stats-chat`.
+Формы: `index`, `ask`, `search`, `validate`, `stats-pipeline`, `stats-chat`.
+
+`validate` — приём в коллекцию знания (пресет `rag-knowledge`): arXiv / PDF URL / DOC URL / файл. Один `diagram-id` на вкладку приёма; см. [presets/rag-knowledge-BINDING.md](presets/rag-knowledge-BINDING.md).
 
 ### Чат (`rag-chat`)
 
@@ -119,9 +122,11 @@ npm test -w @conveyor/plugin-rag
 docker compose -f compose.rag.yml --env-file compose.rag.env.example up -d --build
 ```
 
-Ollama на хосте (`embeddinggemma:latest`, LLM и rerank из `compose.rag.env.example`); sidecar достучится через `host.docker.internal`.
+Ollama на хосте (`embeddinggemma:latest`, LLM и rerank из `compose.rag.env.example`); sidecar достучится через `host.docker.internal`. Volume `rag_plugin_data` держит `RAG_DATA_DIR`; Qdrant/Neo4j — отдельные volumes для S3.
 
-**Обновление после пересборки:** (1) отключите и удалите плагин в UI под администратором → (2) перезапустите sidecar → (3) включите плагин под пользователем workspace. В логах sidecar — новый `publicationVersion`; в plugin-manager — `plugin_publication_committed` и `plugin_static_cached`.
+Если родительские процессы вызывают слои через `system.process.call` с LLM (interpret/resolve), на **demo runtime** задайте `PROCESS_CALL_TIMEOUT_MS` выше 120000 (см. `compose.rag.env.example`). Переменная на sidecar не действует.
+
+**Обновление после пересборки:** (1) поднимите `PLUGIN_PUBLICATION_VERSION` / `RAG_PUBLICATION_VERSION` → (2) отключите и удалите плагин в UI под администратором → (3) перезапустите sidecar (`docker compose -f compose.rag.yml … up -d --build`) → (4) включите плагин под пользователем workspace. В логах sidecar — новый `publicationVersion`; в plugin-manager — `plugin_publication_committed` и `plugin_static_cached`. Том `rag_plugin_data` и сторы Qdrant/Neo4j при перезапуске сохраняются.
 
 **Ollama smoke** (хостовые Qdrant/Neo4j + модели):
 

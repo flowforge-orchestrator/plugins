@@ -15,7 +15,8 @@
     "redmine",
     "llm",
     "caldav",
-    "rag"
+    "rag",
+    "execution"
   ],
   "overrides": {
     "@kosolapus/plugin-ts-sdk": "0.0.10"

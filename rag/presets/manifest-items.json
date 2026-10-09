@@ -3,6 +3,10 @@
     {
       "id": "rag",
       "file": "rag.json"
+    },
+    {
+      "id": "rag-knowledge",
+      "file": "rag-knowledge.json"
     }
   ]
 }

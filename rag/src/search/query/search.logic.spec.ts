@@ -1,70 +1,93 @@
-import { fuseHits, assembleContext, mergeWorkingSet } from './search.logic';
+import type { SearchHit } from '../../contracts/types';
+import {
+  fuseHitsWeighted,
+  matchQueryEntities,
+  preferGraphThenDense,
+  enrichHitAgainstIntent,
+} from './search.logic';
 
-describe('search.logic', () => {
-  it('fuses ranked lists with RRF', () => {
-    const fused = fuseHits(
+const hit = (
+  chunkId: string,
+  source: SearchHit['source'],
+  score = 1,
+): SearchHit => ({
+  chunkId,
+  docId: 'd',
+  text: chunkId,
+  score,
+  source,
+});
+
+describe('graph-first retrieval ranking', () => {
+  it('Zero: empty lists → empty', () => {
+    expect(preferGraphThenDense([], [], 8)).toEqual([]);
+  });
+
+  it('One: graph hit ranks above dense-only neighbor', () => {
+    const ranked = fuseHitsWeighted(
       [
-        [
-          { chunkId: 'a', docId: 'd', text: 'A', score: 1 },
-          { chunkId: 'b', docId: 'd', text: 'B', score: 0.5 },
-        ],
-        [
-          { chunkId: 'b', docId: 'd', text: 'B', score: 1 },
-          { chunkId: 'c', docId: 'd', text: 'C', score: 0.4 },
-        ],
+        { hits: [hit('g1', 'graph')], weight: 2.5 },
+        { hits: [hit('d1', 'dense')], weight: 1 },
       ],
       60,
+      8,
+    );
+    expect(ranked[0]?.chunkId).toBe('g1');
+  });
+
+  it('Many: preferGraphThenDense fills from dense after graph', () => {
+    const out = preferGraphThenDense(
+      [hit('g1', 'graph'), hit('g2', 'graph')],
+      [hit('g1', 'dense'), hit('d1', 'dense'), hit('d2', 'dense')],
       3,
     );
-    expect(fused[0]?.chunkId).toBe('b');
-    expect(fused).toHaveLength(3);
+    expect(out.map((h) => h.chunkId)).toEqual(['g1', 'g2', 'd1']);
+  });
+});
+
+describe('matchQueryEntities', () => {
+  const catalog = [
+    { entityId: 'e1', label: 'RAGScope', typeId: 'Protocol' },
+    { entityId: 'e2', label: 'evidence gates', typeId: 'Component' },
+    { entityId: 'e3', label: 'gate', typeId: 'Metric' },
+  ];
+
+  it('Zero: no overlap → []', () => {
+    expect(matchQueryEntities('привет', catalog)).toEqual([]);
   });
 
-  it('assembles context under budget', () => {
-    const { context, used } = assembleContext(
-      [
-        { chunkId: 'a', docId: 'd', text: 'one', score: 1 },
-        { chunkId: 'b', docId: 'd', text: 'two', score: 0.5 },
-      ],
-      40,
+  it('One: prefers longer label over substring shorter alias', () => {
+    const matched = matchQueryEntities(
+      'How do evidence gates reduce hallucinations?',
+      catalog,
     );
-    expect(used).toBeLessThanOrEqual(40);
-    expect(context).toContain('[a]');
+    expect(matched.map((m) => m.entityId)).toEqual(['e2']);
   });
+});
 
-  describe('working set', () => {
-    const h = (id: string) => ({ chunkId: id, docId: 'd', text: id, score: 1 });
-
-    it('Zero: nothing prior keeps the fresh hits', () => {
-      expect(mergeWorkingSet([h('a')], [], 10).map((x) => x.chunkId)).toEqual(['a']);
-    });
-
-    it('Many: fresh first, prior appended without duplicates', () => {
-      const out = mergeWorkingSet([h('b'), h('c')], [h('a'), h('b')], 10);
-      expect(out.map((x) => x.chunkId)).toEqual(['b', 'c', 'a']);
-    });
-
-    it('Boundary: the cap drops the oldest prior hits', () => {
-      const out = mergeWorkingSet([h('n1'), h('n2')], [h('p1'), h('p2'), h('p3')], 3);
-      expect(out.map((x) => x.chunkId)).toEqual(['n1', 'n2', 'p1']);
-    });
-  });
-
-  describe('working set', () => {
-    const h = (id: string) => ({ chunkId: id, docId: 'd', text: id, score: 1 });
-
-    it('Zero: nothing prior keeps the fresh hits', () => {
-      expect(mergeWorkingSet([h('a')], [], 10).map((x) => x.chunkId)).toEqual(['a']);
-    });
-
-    it('Many: fresh first, prior appended without duplicates', () => {
-      const out = mergeWorkingSet([h('b'), h('c')], [h('a'), h('b')], 10);
-      expect(out.map((x) => x.chunkId)).toEqual(['b', 'c', 'a']);
-    });
-
-    it('Boundary: the cap drops the oldest prior hits', () => {
-      const out = mergeWorkingSet([h('n1'), h('n2')], [h('p1'), h('p2'), h('p3')], 3);
-      expect(out.map((x) => x.chunkId)).toEqual(['n1', 'n2', 'p1']);
-    });
+describe('enrichHitAgainstIntent', () => {
+  it('marks overlapping entities and drops unrelated', () => {
+    const enriched = enrichHitAgainstIntent(
+      {
+        chunkId: 'c1',
+        docId: 'd',
+        text: '…',
+        score: 1,
+        entities: [
+          { entityId: 'e1', label: 'RAGScope', typeId: 'Protocol' },
+          { entityId: 'e9', label: 'Other', typeId: 'Thing' },
+        ],
+        relations: [
+          {
+            typeId: 'USES',
+            fromLabel: 'RAGScope',
+            toLabel: 'evidence gates',
+          },
+        ],
+      },
+      [{ entityId: 'e1', label: 'RAGScope', typeId: 'Protocol' }],
+    );
+    expect(enriched.intentEntities?.map((e) => e.entityId)).toEqual(['e1']);
+    expect(enriched.intentOverlap).toBe(1);
   });
 });

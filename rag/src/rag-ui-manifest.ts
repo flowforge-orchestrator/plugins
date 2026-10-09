@@ -5,6 +5,7 @@ const UI_ASSETS = {
   indexForm: 'ui.form.index',
   searchForm: 'ui.form.search',
   askForm: 'ui.form.ask',
+  validateForm: 'ui.form.validate',
   statsPipelineForm: 'ui.form.stats-pipeline',
   statsChatForm: 'ui.form.stats-chat',
   planWidget: 'ui.widget.rag.plan',
@@ -46,6 +47,14 @@ export function ragUiForms(): NonNullable<PluginManifestRequestV2['ui']> {
         icon: 'i-lucide-message-circle',
       },
       {
+        id: 'validate',
+        label: 'RAG: валидация знания',
+        description:
+          'Приём arXiv / PDF / DOC / файл в коллекцию (пресет rag-knowledge)',
+        assetKey: UI_ASSETS.validateForm,
+        icon: 'i-lucide-shield-check',
+      },
+      {
         id: 'stats-pipeline',
         label: 'RAG: метрики пайплайна',
         description: 'Сбор / чанки / граф / индексация',
@@ -71,6 +80,7 @@ export function ragPluginAssetEntries(): Record<
     [UI_ASSETS.indexForm]: { file: 'ui.form.index.mjs' },
     [UI_ASSETS.searchForm]: { file: 'ui.form.search.mjs' },
     [UI_ASSETS.askForm]: { file: 'ui.form.ask.mjs' },
+    [UI_ASSETS.validateForm]: { file: 'ui.form.validate.mjs' },
     [UI_ASSETS.statsPipelineForm]: { file: 'ui.form.stats-pipeline.mjs' },
     [UI_ASSETS.statsChatForm]: { file: 'ui.form.stats-chat.mjs' },
     [UI_ASSETS.planWidget]: { file: 'ui.widget.rag.plan.mjs' },

@@ -76,6 +76,8 @@ docker compose --env-file compose.env.example up -d --build
 
 Файл [`docker-compose.yml`](docker-compose.yml) поднимает **все** плагины-пакеты. Ядро он не стартует.
 
+Хост вне этой Docker-сети (Telegram и LLM через WireGuard) — [`compose.satellite.yml`](compose.satellite.yml). Порты executor публикуются на `SATELLITE_BIND_IP`. Образец переменных — [`compose.satellite.env.example`](compose.satellite.env.example); рабочий файл `.env.satellite` в git не кладётся.
+
 ## Как добавить свой плагин
 
 ### С агентом (Cursor)

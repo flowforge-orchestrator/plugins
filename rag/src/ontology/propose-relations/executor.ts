@@ -86,7 +86,9 @@ export class RagOntologyProposeRelationsExecutor {
     const services = getRagServices();
     const types = fromJsonPort<EntityTypeDecl[]>(ctx.inputs.candidateTypes, []);
     const typeIds = new Set(types.map((t) => t.id));
-    const chunks = fromJsonPort<RagChunk[]>(ctx.inputs.chunks, []);
+    const chunks = fromJsonPort<RagChunk[]>(ctx.inputs.chunks, []).filter(
+      (c) => c.level == null || c.level === 'chunk',
+    );
     const sample = chunks
       .slice(0, 12)
       .map((c) => ({ headingPath: c.headingPath, text: c.text.slice(0, 500) }));

@@ -57,6 +57,21 @@ export function mergeOntologySchema(input: {
       });
       continue;
     }
+    // Prefer attaching under an existing parent instead of growing a per-doc taxonomy.
+    if (candidate.parent && entityByNorm.has(norm(candidate.parent))) {
+      const parent = entityByNorm.get(norm(candidate.parent))!;
+      operations.push({
+        op: 'ALIAS',
+        kind: 'entity',
+        fromId: candidate.id,
+        toId: parent.id,
+      });
+      continue;
+    }
+    if (nextEntities.length >= 12) {
+      // Schema saturated: refuse further entity-type growth.
+      continue;
+    }
     nextEntities.push(candidate);
     entityByNorm.set(key, candidate);
     operations.push({
@@ -71,6 +86,7 @@ export function mergeOntologySchema(input: {
   for (const candidate of input.candidateRelations) {
     const key = norm(candidate.id);
     if (relationByNorm.has(key)) continue;
+    if (nextRelations.length >= 16) continue;
     const fromOk = candidate.from.every((id) => knownEntityIds.has(id));
     const toOk = candidate.to.every((id) => knownEntityIds.has(id));
     if (!fromOk || !toOk) continue;

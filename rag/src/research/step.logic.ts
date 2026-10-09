@@ -79,8 +79,27 @@ export function planStep(input: {
       const open = fields.required.filter((slot) => !filled.has(slot) && !unresolved.has(slot));
       const pending = open.filter((slot) => !asked.has(slot));
       const tool = input.queryTool.trim();
-      if (pending.length > 0 && tool && known({ id: tool })) {
-        return { op: tool, query: pending[0], args: {}, queue: [], callModel: false, giveUp: [] };
+      if (pending.length > 0) {
+        const slotQuery = pending[0] ?? input.question;
+        const seed: StepRequest[] = [];
+        // First open slot: walk the graph before dense search.
+        if (!asked.size && known({ id: 'graph' })) {
+          seed.push({ id: 'graph', query: slotQuery });
+        }
+        if (tool && known({ id: tool }) && tool !== 'graph') {
+          seed.push({ id: tool, query: slotQuery });
+        }
+        if (seed.length > 0) {
+          const [head, ...rest] = seed;
+          return {
+            op: head!.id,
+            query: head!.query ?? slotQuery,
+            args: head!.args ?? {},
+            queue: rest,
+            callModel: false,
+            giveUp: [],
+          };
+        }
       }
       return {
         op: 'none',
@@ -94,9 +113,25 @@ export function planStep(input: {
     if (input.evidenceCount > 0) {
       return { op: 'none', query: input.question, args: {}, queue: [], callModel: false, giveUp: [] };
     }
+    // Graph-first: entity neighborhood before dense search when both are wired.
+    const seed: StepRequest[] = [];
+    if (known({ id: 'graph' })) {
+      seed.push({ id: 'graph', query: input.question });
+    }
     const tool = input.queryTool.trim();
-    if (tool && known({ id: tool })) {
-      return { op: tool, query: input.question, args: {}, queue: [], callModel: false, giveUp: [] };
+    if (tool && known({ id: tool }) && tool !== 'graph') {
+      seed.push({ id: tool, query: input.question });
+    }
+    if (seed.length > 0) {
+      const [head, ...rest] = seed;
+      return {
+        op: head!.id,
+        query: head!.query ?? input.question,
+        args: head!.args ?? {},
+        queue: rest,
+        callModel: false,
+        giveUp: [],
+      };
     }
     return { op: 'none', query: input.question, args: {}, queue: [], callModel: false, giveUp: [] };
   }

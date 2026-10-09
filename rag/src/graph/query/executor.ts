@@ -15,6 +15,8 @@ import {
 } from '../../internal/observations-merge';
 import { noteChatGraph } from '../../internal/chat-metrics';
 import { formatGraphFocus } from './query.logic';
+import { matchQueryEntities } from '../../search/query/search.logic';
+import type { SearchHit } from '../../contracts/types';
 
 class InputDto {
   @IsString()
@@ -138,20 +140,79 @@ export class RagGraphQueryExecutor {
     }
 
     const services = getRagServices();
+    const base = normalizeObservations(ctx.inputs.observations);
     const focused = await services.graph.focus({
       collectionId: ctx.inputs.collectionId,
       query: ctx.inputs.query,
     });
-    noteChatGraph(ctx.runId, focused.nodes.length);
-    const graphContext = focused.context || formatGraphFocus(focused.nodes);
+    let nodes = focused.nodes;
+    let graphContext = focused.context || formatGraphFocus(nodes);
+
+    // Russian / paraphrased slots often miss English labels — seed from catalog.
+    if (nodes.length === 0) {
+      const catalog =
+        (await services.graph.listEntityCatalog?.({
+          collectionId: ctx.inputs.collectionId,
+        })) ?? [];
+      const probe = [
+        ctx.inputs.query,
+        base.frame?.entity,
+        base.task?.question,
+        'RAG',
+        'hallucination',
+        'evidence gates',
+        'detection',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      const matched = matchQueryEntities(probe, catalog);
+      const keywordHits = catalog.filter((e) =>
+        /hallucin|evidence\s*gate|ragscope|\brag\b|detection/i.test(e.label),
+      );
+      const labels = [
+        ...new Set(
+          [...matched, ...keywordHits].map((e) => e.label).filter(Boolean),
+        ),
+      ].slice(0, 12);
+      if (labels.length > 0) {
+        const hits: SearchHit[] = await services.graph.expand({
+          collectionId: ctx.inputs.collectionId,
+          query: labels[0] ?? ctx.inputs.query,
+          depth: 2,
+          entityLabels: labels,
+        });
+        if (hits.length > 0) {
+          graphContext = [
+            `entities: ${labels.join(', ')}`,
+            ...hits.map((h) => {
+              const ents = (h.entities ?? []).map((e) => e.label).join(', ');
+              const rels = (h.relations ?? [])
+                .map((r) => `${r.fromLabel}-[${r.typeId}]->${r.toLabel}`)
+                .join('; ');
+              return `[${h.docId}] ${h.chunkId}${ents ? ` | ${ents}` : ''}${rels ? ` | ${rels}` : ''}\n${h.text}`;
+            }),
+          ].join('\n\n');
+          nodes = labels.map((label) => ({
+            entityId: '',
+            label,
+            typeId: '',
+            docIds: [],
+            excerpts: [],
+            links: [],
+          }));
+        }
+      }
+    }
+
+    noteChatGraph(ctx.runId, nodes.length);
     const { observationsJson } = mergeObservations(
-      ctx.inputs.observations,
-      { graphContext },
+      base,
+      { graphContext, queue: base.queue },
       'graph',
     );
     return {
       graphContext,
-      nodeCount: focused.nodes.length,
+      nodeCount: nodes.length,
       observations: observationsJson,
     };
   }

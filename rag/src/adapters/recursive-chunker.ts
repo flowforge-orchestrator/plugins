@@ -1,4 +1,4 @@
-import type { DocBlock, RagChunk } from '../contracts/types';
+import type { ChunkLevel, DocBlock, RagChunk } from '../contracts/types';
 import type { Chunker, ChunkStrategy } from '../internal/interfaces';
 import { contentHash } from './text-parser';
 
@@ -22,22 +22,137 @@ function splitBySentences(text: string): string[] {
     .filter(Boolean);
 }
 
+function pushUnit(
+  chunks: RagChunk[],
+  input: {
+    chunkId: string;
+    docId: string;
+    text: string;
+    headingPath: string[];
+    parentId?: string;
+    level: ChunkLevel;
+  },
+): void {
+  const text = input.text.trim();
+  if (!text && input.level === 'chunk') return;
+  chunks.push({
+    chunkId: input.chunkId,
+    docId: input.docId,
+    text: text || input.chunkId,
+    contentHash: contentHash(text || input.chunkId, input.headingPath),
+    headingPath: input.headingPath,
+    parentId: input.parentId,
+    level: input.level,
+    tokenEstimate: estimateTokens(text || input.chunkId),
+  });
+}
+
+/** Split text into leaves of about maxChars with overlap; force-cut over hardMax. */
+export function splitToLeaves(
+  text: string,
+  maxChars: number,
+  overlapChars: number,
+  hardMaxChars: number,
+): { pieces: string[]; forcedCuts: number } {
+  const trimmed = text.trim();
+  if (!trimmed) return { pieces: [], forcedCuts: 0 };
+  if (trimmed.length <= maxChars) return { pieces: [trimmed], forcedCuts: 0 };
+
+  const sentences = splitBySentences(trimmed);
+  const pieces: string[] = [];
+  let forcedCuts = 0;
+  let current = '';
+
+  const flush = () => {
+    if (current) {
+      pieces.push(current);
+      current = '';
+    }
+  };
+
+  const emitHard = (raw: string) => {
+    forcedCuts += 1;
+    let start = 0;
+    while (start < raw.length) {
+      const end = Math.min(raw.length, start + hardMaxChars);
+      pieces.push(raw.slice(start, end));
+      if (end >= raw.length) break;
+      start = Math.max(end - overlapChars, start + 1);
+    }
+  };
+
+  for (const sentence of sentences.length ? sentences : [trimmed]) {
+    if (sentence.length > hardMaxChars) {
+      flush();
+      emitHard(sentence);
+      continue;
+    }
+    const candidate = current ? `${current} ${sentence}` : sentence;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+      continue;
+    }
+    flush();
+    if (sentence.length <= maxChars) {
+      current = sentence;
+    } else {
+      emitHard(sentence);
+    }
+  }
+  flush();
+  return { pieces, forcedCuts };
+}
+
+/**
+ * Hierarchical chunking: doc → section → paragraph → ~maxChars leaf.
+ * Non-leaf units are graph nodes; only level=`chunk` is embedded.
+ */
 export function recursiveChunkBlocks(input: {
   blocks: DocBlock[];
   docId: string;
   maxTokens: number;
   overlapTokens: number;
   hardMaxTokens: number;
+  /** Leaf target size in characters (default from maxTokens×4). */
+  maxChars?: number;
+  overlapChars?: number;
+  hardMaxChars?: number;
 }): {
   chunks: RagChunk[];
   lengthHistogram: Record<string, number>;
   emptyShare: number;
   forcedCutShare: number;
 } {
-  const { blocks, docId, maxTokens, overlapTokens, hardMaxTokens } = input;
+  const { blocks, docId } = input;
+  const maxChars = Math.max(
+    32,
+    input.maxChars ?? Math.max(32, input.maxTokens * 4),
+  );
+  const overlapChars = Math.max(
+    0,
+    input.overlapChars ?? Math.max(0, input.overlapTokens * 4),
+  );
+  const hardMaxChars = Math.max(
+    maxChars,
+    input.hardMaxChars ?? Math.max(maxChars, input.hardMaxTokens * 4),
+  );
+
   const chunks: RagChunk[] = [];
   let forcedCuts = 0;
   let empty = 0;
+
+  const title =
+    blocks.find((b) => b.type === 'heading')?.text?.trim() ||
+    blocks[0]?.text?.slice(0, 120) ||
+    docId;
+  const docIdNode = `${docId}:doc`;
+  pushUnit(chunks, {
+    chunkId: docIdNode,
+    docId,
+    text: title,
+    headingPath: [],
+    level: 'doc',
+  });
 
   const sectionBlocks = new Map<string, DocBlock[]>();
   for (const block of blocks) {
@@ -48,110 +163,78 @@ export function recursiveChunkBlocks(input: {
     sectionBlocks.set(key, list);
   }
 
-  let chunkIndex = 0;
+  if (sectionBlocks.size === 0) {
+    return {
+      chunks,
+      lengthHistogram: {},
+      emptyShare: 0,
+      forcedCutShare: 0,
+    };
+  }
+
+  let sectionIndex = 0;
+  let paraIndex = 0;
+  let leafIndex = 0;
+
   for (const [sectionKey, section] of sectionBlocks) {
     const headingPath =
       section[0]?.headingPath ??
       (sectionKey === '(root)' ? [] : sectionKey.split(' > '));
-    const parentId = `parent:${docId}:${sectionKey}`;
-    const fullText = section.map((b) => b.text).join('\n\n').trim();
-    if (!fullText) {
-      empty += 1;
-      continue;
-    }
-    const fullTokens = estimateTokens(fullText);
-    if (fullTokens <= maxTokens) {
-      chunks.push({
-        chunkId: `${docId}:c${chunkIndex++}`,
-        docId,
-        text: fullText,
-        contentHash: contentHash(fullText, headingPath),
-        headingPath,
-        parentId,
-        tokenEstimate: fullTokens,
-      });
-      continue;
-    }
+    const sectionId = `${docId}:sec${sectionIndex++}`;
+    const sectionTitle =
+      headingPath[headingPath.length - 1] || sectionKey || '(root)';
+    pushUnit(chunks, {
+      chunkId: sectionId,
+      docId,
+      text: sectionTitle,
+      headingPath,
+      parentId: docIdNode,
+      level: 'section',
+    });
 
-    const pieces: string[] = [];
     for (const block of section) {
-      if (
-        (block.type === 'table' ||
-          block.type === 'code' ||
-          block.type === 'list') &&
-        estimateTokens(block.text) <= hardMaxTokens
-      ) {
-        pieces.push(block.text);
-      } else if (estimateTokens(block.text) <= maxTokens) {
-        pieces.push(block.text);
-      } else {
-        pieces.push(...splitBySentences(block.text));
-      }
-    }
-
-    let current = '';
-    for (const piece of pieces) {
-      const candidate = current ? `${current}\n\n${piece}` : piece;
-      if (estimateTokens(candidate) <= maxTokens) {
-        current = candidate;
+      const body = block.text.trim();
+      if (!body) {
+        empty += 1;
         continue;
       }
-      if (current) {
-        chunks.push({
-          chunkId: `${docId}:c${chunkIndex++}`,
+      const paraId = `${docId}:p${paraIndex++}`;
+      pushUnit(chunks, {
+        chunkId: paraId,
+        docId,
+        text: body.length > 500 ? `${body.slice(0, 500)}…` : body,
+        headingPath,
+        parentId: sectionId,
+        level: 'paragraph',
+      });
+
+      const { pieces, forcedCuts: cuts } = splitToLeaves(
+        body,
+        maxChars,
+        overlapChars,
+        hardMaxChars,
+      );
+      forcedCuts += cuts;
+      for (const piece of pieces) {
+        pushUnit(chunks, {
+          chunkId: `${docId}:c${leafIndex++}`,
           docId,
-          text: current,
-          contentHash: contentHash(current, headingPath),
+          text: piece,
           headingPath,
-          parentId,
-          tokenEstimate: estimateTokens(current),
+          parentId: paraId,
+          level: 'chunk',
         });
       }
-      if (estimateTokens(piece) > hardMaxTokens) {
-        forcedCuts += 1;
-        let start = 0;
-        const chars = Math.max(1, hardMaxTokens * 4);
-        while (start < piece.length) {
-          const end = Math.min(piece.length, start + chars);
-          const slice = piece.slice(start, end);
-          const overlapChars = Math.min(overlapTokens * 4, slice.length);
-          chunks.push({
-            chunkId: `${docId}:c${chunkIndex++}`,
-            docId,
-            text: slice,
-            contentHash: contentHash(slice, headingPath),
-            headingPath,
-            parentId,
-            tokenEstimate: estimateTokens(slice),
-          });
-          start = end - overlapChars;
-          if (start >= piece.length - overlapChars) break;
-          if (end === piece.length) break;
-        }
-        current = '';
-      } else {
-        current = piece;
-      }
-    }
-    if (current) {
-      chunks.push({
-        chunkId: `${docId}:c${chunkIndex++}`,
-        docId,
-        text: current,
-        contentHash: contentHash(current, headingPath),
-        headingPath,
-        parentId,
-        tokenEstimate: estimateTokens(current),
-      });
     }
   }
 
+  const leaves = chunks.filter((c) => c.level === 'chunk');
   const lengthHistogram: Record<string, number> = {};
-  for (const c of chunks) {
+  for (const c of leaves) {
     const b = bucket(c.tokenEstimate);
     lengthHistogram[b] = (lengthHistogram[b] ?? 0) + 1;
   }
-  const denom = Math.max(1, chunks.length);
+  const denom = Math.max(1, leaves.length);
   return {
     chunks,
     lengthHistogram,
@@ -168,9 +251,11 @@ export class RecursiveChunker implements Chunker {
     maxTokens: number;
     overlapTokens: number;
     hardMaxTokens?: number;
+    maxChars?: number;
+    overlapChars?: number;
+    hardMaxChars?: number;
   }) {
     const hardMaxTokens = input.hardMaxTokens ?? input.maxTokens * 2;
-    // semantic strategy shares the same port contract; v1 uses recursive cuts.
     void input.strategy;
     return recursiveChunkBlocks({
       blocks: input.blocks,
@@ -178,6 +263,9 @@ export class RecursiveChunker implements Chunker {
       maxTokens: input.maxTokens,
       overlapTokens: input.overlapTokens,
       hardMaxTokens,
+      maxChars: input.maxChars,
+      overlapChars: input.overlapChars,
+      hardMaxChars: input.hardMaxChars,
     });
   }
 }

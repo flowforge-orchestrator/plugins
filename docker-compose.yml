@@ -143,6 +143,26 @@ services:
       EXECUTOR_TCP_PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
       PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
 
+  execution:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: execution
+    image: ${EXECUTION_PLUGIN_IMAGE:-plugin-execution:latest}
+    user: root
+    restart: unless-stopped
+    ports:
+      - '${EXECUTION_EXECUTOR_TCP_PORT:-9415}:${EXECUTION_EXECUTOR_TCP_PORT:-9415}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${EXECUTION_PLUGIN_PULL_ADVERTISED_HOST:-execution}
+      PLUGIN_TCP_PORT: ${EXECUTION_EXECUTOR_TCP_PORT:-9415}
+      EXECUTOR_TCP_PORT: ${EXECUTION_EXECUTOR_TCP_PORT:-9415}
+      PORT: ${EXECUTION_EXECUTOR_TCP_PORT:-9415}
+
   rag:
     build:
       context: .
@@ -170,8 +190,14 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+    volumes:
+      - rag_plugin_data:/data/rag
 
 # Full RAG stack with stores: use compose.rag.yml (preferred for local demo).
+# volumes.rag_plugin_data — durable S0–S2 (RAG_DATA_DIR); Qdrant/Neo4j stay in compose.rag.yml.
+
+volumes:
+  rag_plugin_data:
 
 # Подключение к уже существующей сети (имя = у plugin-manager / runtime-control-plane):
 #

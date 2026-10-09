@@ -14,6 +14,9 @@ import type {
 } from '../../contracts/types';
 import { fromJsonPort, toJsonPort } from '../../internal/json-port';
 import { createHash } from 'crypto';
+import { batchLeafChunks } from '../../spo/spo.logic';
+
+const BATCH_SIZE = 4;
 
 class InputDto {
   @Allow()
@@ -82,7 +85,8 @@ class OutputDto {
 @Executor<InputDto, OutputDto>({
   nodeType: 'plugin.rag.entity.extract',
   name: 'RAG: извлечь упоминания',
-  description: 'Извлекает упоминания сущностей в закрытую схему.',
+  description:
+    'Извлекает упоминания сущностей из каждого leaf-чанка (батчами) в закрытую схему.',
   help,
   pluginId: 'rag',
   inputs: InputDto,
@@ -102,55 +106,63 @@ export class RagEntityExtractExecutor {
     });
     const typeIds = new Set(schema.entityTypes.map((t) => t.id));
     const chunks = fromJsonPort<RagChunk[]>(ctx.inputs.chunks, []);
-    const sample = chunks
-      .slice(0, 4)
-      .map((c) => ({
-        chunkId: c.chunkId,
-        docId: c.docId,
-        text: c.text.slice(0, 350),
-      }));
-    const payload = await services.llm.completeJson<{
-      mentions?: Array<{
-        surface: string;
-        typeId: string;
-        chunkId: string;
-        identityValues?: Record<string, string>;
-      }>;
-    }>({
-      apiKey: ctx.inputs.apiKey,
-      systemPrompt:
-        'Extract up to 8 entity mentions. Return JSON {"mentions":[{"surface","typeId","chunkId","identityValues"}]}. typeId must be from schema entityTypes ids only.',
-      userPrompt: JSON.stringify(
-        {
-          entityTypeIds: schema.entityTypes.map((t) => t.id),
-          chunks: sample,
-        },
-        null,
-        2,
-      ),
-    });
+    const batches = batchLeafChunks(chunks, BATCH_SIZE);
     const mentions: EntityMention[] = [];
     let outOfSchema = 0;
-    for (const raw of payload.mentions ?? []) {
-      if (!typeIds.has(raw.typeId)) {
-        outOfSchema += 1;
-        continue;
-      }
-      const chunk = chunks.find((c) => c.chunkId === raw.chunkId) ?? chunks[0];
-      if (!chunk) continue;
-      const mentionId = createHash('sha256')
-        .update(`${chunk.docId}:${raw.chunkId}:${raw.typeId}:${raw.surface}`)
-        .digest('hex')
-        .slice(0, 24);
-      mentions.push({
-        mentionId,
-        surface: raw.surface,
-        typeId: raw.typeId,
-        chunkId: chunk.chunkId,
-        docId: ctx.inputs.docId ?? chunk.docId,
-        identityValues: raw.identityValues,
+    let rawTotal = 0;
+
+    for (const batch of batches) {
+      const payload = await services.llm.completeJson<{
+        mentions?: Array<{
+          surface: string;
+          typeId: string;
+          chunkId: string;
+          identityValues?: Record<string, string>;
+        }>;
+      }>({
+        apiKey: ctx.inputs.apiKey,
+        systemPrompt:
+          'Extract EVERY named entity mention in EACH chunk (people, places, animals, orgs, objects). Return JSON {"mentions":[{"surface","typeId","chunkId","identityValues"}]}. typeId must be from schema entityTypes ids only. Keep surface as in text (including case/inflection).',
+        userPrompt: JSON.stringify(
+          {
+            entityTypeIds: schema.entityTypes.map((t) => t.id),
+            chunks: batch.map((c) => ({
+              chunkId: c.chunkId,
+              docId: c.docId,
+              text: c.text.slice(0, 500),
+            })),
+          },
+          null,
+          2,
+        ),
       });
+
+      for (const raw of payload.mentions ?? []) {
+        rawTotal += 1;
+        if (!typeIds.has(raw.typeId)) {
+          outOfSchema += 1;
+          continue;
+        }
+        const chunk =
+          batch.find((c) => c.chunkId === raw.chunkId) ??
+          chunks.find((c) => c.chunkId === raw.chunkId) ??
+          batch[0];
+        if (!chunk) continue;
+        const mentionId = createHash('sha256')
+          .update(`${chunk.docId}:${raw.chunkId}:${raw.typeId}:${raw.surface}`)
+          .digest('hex')
+          .slice(0, 24);
+        mentions.push({
+          mentionId,
+          surface: raw.surface,
+          typeId: raw.typeId,
+          chunkId: chunk.chunkId,
+          docId: ctx.inputs.docId ?? chunk.docId,
+          identityValues: raw.identityValues,
+        });
+      }
     }
+
     const docId = ctx.inputs.docId ?? chunks[0]?.docId;
     if (docId) {
       await services.ontology.replaceMentionsForDoc(
@@ -161,10 +173,7 @@ export class RagEntityExtractExecutor {
     }
     return {
       mentions: toJsonPort(mentions) as never,
-      outOfSchemaShare:
-        (payload.mentions?.length ?? 0) === 0
-          ? 0
-          : outOfSchema / (payload.mentions?.length ?? 1),
+      outOfSchemaShare: rawTotal === 0 ? 0 : outOfSchema / rawTotal,
     };
   }
 }

@@ -1,4 +1,4 @@
-import { IsEnum, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 import {
   ExecContext,
   Executor,
@@ -52,6 +52,17 @@ export class InputDto {
     secretKind: 'OPENAI_API_KEY',
   })
   apiKey!: string;
+
+  @IsOptional()
+  @IsString()
+  @FieldDecorator({
+    type: 'string',
+    label: 'Базовый URL',
+    description:
+      'Адрес запроса целиком. Пусто — OPENAI_BASE_URL, иначе https://api.openai.com/v1/responses.',
+    default: 'https://api.openai.com/v1/responses',
+  })
+  baseUrl?: string;
 }
 
 /**
@@ -123,14 +134,15 @@ type OpenAIResponsesApiResponse = {
   [k: string]: unknown;
 };
 
-export class OpenAIHttpService {
-  private readonly endpoint = 'https://api.openai.com/v1/responses';
+export const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1/responses';
 
+export class OpenAIHttpService {
   async generateText(params: {
     model: OpenAIModel;
     systemPrompt: string;
     userPrompt: string;
     apiKey: string;
+    baseUrl: string;
   }): Promise<{
     text: string;
     rawText: string;
@@ -177,7 +189,7 @@ export class OpenAIHttpService {
     if (orgId) headers['OpenAI-Organization'] = orgId;
     if (projectId) headers['OpenAI-Project'] = projectId;
 
-    const res = await fetch(this.endpoint, {
+    const res = await fetch(params.baseUrl.trim(), {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -255,13 +267,18 @@ export class LlmOpenAiGenerateExecutor {
   private readonly openai = new OpenAIHttpService();
 
   async execute(ctx: ExecContext<InputDto>): Promise<OutputDto> {
-    const { systemPrompt, userPrompt, model, apiKey } = ctx.inputs;
+    const { systemPrompt, userPrompt, model, apiKey, baseUrl } = ctx.inputs;
+    const resolvedBaseUrl =
+      baseUrl?.trim() ||
+      process.env.OPENAI_BASE_URL?.trim() ||
+      DEFAULT_OPENAI_BASE_URL;
 
     const completion = await this.openai.generateText({
       systemPrompt,
       userPrompt,
       model,
       apiKey,
+      baseUrl: resolvedBaseUrl,
     });
 
     // "key -> value" resolver map

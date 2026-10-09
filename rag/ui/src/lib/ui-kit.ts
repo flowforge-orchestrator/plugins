@@ -36,6 +36,11 @@ export function css(): string {
 .rag-shell .bubble.bot{align-self:flex-start;background:#fff;border:1px solid #d5e0db}
 .rag-shell .composer{display:flex;gap:8px}
 .rag-shell .composer textarea{flex:1;min-height:2.75rem}
+.rag-shell .tabs{display:flex;gap:4px;flex-wrap:wrap}
+.rag-shell .tabs button{background:#e8efeb;color:#143028}
+.rag-shell .tabs button.active{background:#1f6b4f;color:#fff}
+.rag-shell .panel{border:1px solid #d5e0db;border-radius:12px;padding:12px;background:#f7fbf9;display:flex;flex-direction:column;gap:8px}
+.rag-shell .result{border:1px solid #d5e0db;border-radius:10px;padding:10px;background:#fff;white-space:pre-wrap;word-break:break-word;font-size:12px}
 .rag-shell table{width:100%;border-collapse:collapse;font-size:12px}
 .rag-shell th,.rag-shell td{border-bottom:1px solid #e4ece8;padding:6px 4px;text-align:left}
 `;

@@ -15,7 +15,15 @@ import help from './help.md';
 import { publicationPullEndpointFromEnv } from '../../getUrlFromEnv';
 import { getRagServices } from '../../adapters/services';
 import { selectDiverseHits } from '../rerank/rerank.logic';
-import { assembleContext, fuseHits, mergeWorkingSet } from './search.logic';
+import {
+  assembleContext,
+  enrichHitAgainstIntent,
+  fuseHitsWeighted,
+  matchQueryEntities,
+  mergeWorkingSet,
+  preferGraphThenDense,
+  sortByIntentThenScore,
+} from './search.logic';
 import { toJsonPort } from '../../internal/json-port';
 import type { SearchHit } from '../../contracts/types';
 import { normalizeObservations } from '../../agent/turn/agent.turn.logic';
@@ -140,7 +148,7 @@ class OutputDto {
   nodeType: 'plugin.rag.search.query',
   name: 'RAG: поиск',
   description:
-    'Гибридный поиск: dense + графовое соседство, RRF, сборка контекста.',
+    'Поиск по интенту: сущности из вопроса → граф (DISCUSSED_IN) приоритетнее dense; контекст с сущностями/связями чанка.',
   help,
   pluginId: 'rag',
   inputs: InputDto,
@@ -189,6 +197,31 @@ export class RagSearchQueryExecutor {
     }
     const services = getRagServices();
     const topK = Math.max(1, Number(ctx.inputs.topK ?? 24));
+    const obsFrame = normalizeObservations(ctx.inputs.observations).frame;
+    const catalog =
+      (await services.graph.listEntityCatalog?.({
+        collectionId: ctx.inputs.collectionId,
+      })) ?? (await services.ontology.listEntities(ctx.inputs.collectionId));
+    const catalogRefs = catalog.map((e) => ({
+      entityId: e.entityId,
+      label: e.label,
+      typeId: e.typeId,
+    }));
+    const intentEntities = [
+      ...matchQueryEntities(ctx.inputs.query, catalogRefs),
+    ];
+    if (obsFrame?.entity?.trim()) {
+      const fromFrame = catalogRefs.find(
+        (e) =>
+          e.label.toLowerCase() === obsFrame.entity!.trim().toLowerCase(),
+      );
+      if (
+        fromFrame &&
+        !intentEntities.some((e) => e.entityId === fromFrame.entityId)
+      ) {
+        intentEntities.push(fromFrame);
+      }
+    }
     const embedded = await services.embedder.embed(
       [ctx.inputs.query],
       ctx.inputs.embeddingApiKey ?? '',
@@ -202,14 +235,24 @@ export class RagSearchQueryExecutor {
     const graphHits = await services.graph.expand({
       collectionId: ctx.inputs.collectionId,
       query: ctx.inputs.query,
-      depth: 1,
+      depth: 2,
+      entityLabels: intentEntities.map((e) => e.label),
     });
-    const pool = fuseHits(
-      [dense, graphHits],
+    const weighted = fuseHitsWeighted(
+      [
+        { hits: graphHits, weight: 2.5 },
+        { hits: dense, weight: 1 },
+      ],
       60,
       Math.max(topK * 4, 48),
     );
-    const fresh = selectDiverseHits(pool, { topK, maxPerDoc: 2 });
+    const pool = preferGraphThenDense(
+      graphHits,
+      weighted,
+      Math.max(topK * 4, 48),
+    ).map((hit) => enrichHitAgainstIntent(hit, intentEntities));
+    const ranked = sortByIntentThenScore(pool);
+    const fresh = selectDiverseHits(ranked, { topK, maxPerDoc: 2 });
     noteChatVector(
       ctx.runId,
       dense.length,

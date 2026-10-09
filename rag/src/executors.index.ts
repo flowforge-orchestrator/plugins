@@ -47,6 +47,30 @@ import {
   RagSlotProposeExecutor,
   RagSynthesizeExecutor,
 } from './research/executors';
+import { RagEvidenceCommitExecutor } from './knowledge/evidence/executor';
+import { RagInterpretObservationsExecutor } from './knowledge/interpret/executor';
+import { RagConceptResolveExecutor } from './knowledge/concept/executor';
+import { RagClaimResolveExecutor } from './knowledge/claim/resolve/executor';
+import { RagClaimCommitExecutor } from './knowledge/claim/commit/executor';
+import { RagConflictPolicyExecutor } from './knowledge/conflict/executor';
+import { RagOntologyEvolveExecutor } from './knowledge/ontology/executor';
+import { RagDeriveCurrentExecutor } from './knowledge/derive/current/current.executor';
+import { RagDeriveProjectExecutor } from './knowledge/derive/project/project.executor';
+import {
+  RagComparePeriodsExecutor,
+  RagFindClaimsExecutor,
+  RagFindEntitiesExecutor,
+  RagFindEventsExecutor,
+  RagFindEvidenceExecutor,
+  RagInspectHistoryExecutor,
+} from './knowledge/find/executors';
+import { RagWorkspaceBuildExecutor } from './knowledge/workspace/executor';
+import {
+  RagProposeAliasExecutor,
+  RagProposeClaimExecutor,
+  RagProposeConceptExecutor,
+  RagProposeRelationExecutor,
+} from './knowledge/propose/executors';
 
 const EXECUTOR_CLASSES = [
   RagExtractExecutor,
@@ -89,6 +113,26 @@ const EXECUTOR_CLASSES = [
   RagSlotCriticExecutor,
   RagSynthesizeExecutor,
   RagSafetyExecutor,
+  RagEvidenceCommitExecutor,
+  RagInterpretObservationsExecutor,
+  RagConceptResolveExecutor,
+  RagClaimResolveExecutor,
+  RagClaimCommitExecutor,
+  RagConflictPolicyExecutor,
+  RagOntologyEvolveExecutor,
+  RagDeriveCurrentExecutor,
+  RagDeriveProjectExecutor,
+  RagFindClaimsExecutor,
+  RagFindEntitiesExecutor,
+  RagFindEventsExecutor,
+  RagFindEvidenceExecutor,
+  RagInspectHistoryExecutor,
+  RagComparePeriodsExecutor,
+  RagWorkspaceBuildExecutor,
+  RagProposeClaimExecutor,
+  RagProposeRelationExecutor,
+  RagProposeConceptExecutor,
+  RagProposeAliasExecutor,
 ] as const;
 
 export function getRagExecutors(): ExecutorEntry[] {

@@ -17,7 +17,7 @@ export class LlmPluginManifestBuilder implements PluginManifestOnInitBuilder {
       kind: 'plugin_manifest_request_v2',
       pluginId: 'llm',
       publicationVersion:
-        process.env.PLUGIN_PUBLICATION_VERSION?.trim() ?? '0.0.2',
+        process.env.PLUGIN_PUBLICATION_VERSION?.trim() ?? '0.0.4',
       label: 'LLM',
       description:
         'Языковые модели и генеративные сервисы: OpenAI, Ollama, Hugging Face Inference; batch pull executor list на TCP с executor ingress.',

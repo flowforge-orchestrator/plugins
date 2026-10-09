@@ -51,7 +51,7 @@ npm run build -w @conveyor/plugin-llm
 
 **Внешние зависимости:**
 
-- OpenAI — доступ в интернет или свой gateway (`OPENAI_BASE_URL`).
+- OpenAI — поле **Базовый URL** на узле, иначе `OPENAI_BASE_URL`, иначе `https://api.openai.com/v1/responses`. Адрес уходит в запрос как есть.
 - Ollama — процесс на хосте или в отдельном контейнере.
 - Hugging Face — Inference API endpoint.
 

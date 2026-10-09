@@ -1,4 +1,5 @@
 import type { GraphNodeHit } from '../graph/query/query.logic';
+import type { Claim, Evidence } from '../contracts/knowledge';
 import type {
   CanonicalEntity,
   DocBlock,
@@ -27,6 +28,10 @@ export interface Chunker {
     maxTokens: number;
     overlapTokens: number;
     hardMaxTokens?: number;
+    /** Leaf size in characters (~400). Overrides maxTokens×4 when set. */
+    maxChars?: number;
+    overlapChars?: number;
+    hardMaxChars?: number;
   }): {
     chunks: RagChunk[];
     lengthHistogram: Record<string, number>;
@@ -86,6 +91,14 @@ export interface OntologyStore {
   ): Promise<void>;
 }
 
+/** Durable S0 Evidence + S2 Claim canon under RAG_DATA_DIR. */
+export interface KnowledgeCanonStore {
+  listEvidence(collectionId: string): Promise<Evidence[]>;
+  saveEvidence(collectionId: string, evidence: Evidence[]): Promise<void>;
+  listClaims(collectionId: string): Promise<Claim[]>;
+  saveClaims(collectionId: string, claims: Claim[]): Promise<void>;
+}
+
 export interface VectorIndex {
   upsertChunks(input: {
     collectionId: string;
@@ -109,11 +122,15 @@ export interface KnowledgeGraph {
     entities: CanonicalEntity[];
     relations: EntityRelation[];
     chunks: RagChunk[];
+    /** Mentions drive Entity-[:DISCUSSED_IN]->Chunk edges. */
+    mentions?: EntityMention[];
   }): Promise<{ entitiesWritten: number; relationsWritten: number }>;
   expand(input: {
     collectionId: string;
     query: string;
     depth: number;
+    /** Prefer these entity labels / ids when seeding graph retrieval. */
+    entityLabels?: string[];
   }): Promise<SearchHit[]>;
   focus(input: {
     collectionId: string;
@@ -122,4 +139,8 @@ export interface KnowledgeGraph {
   listDocuments(input: {
     collectionId: string;
   }): Promise<{ docId: string; title: string }[]>;
+  /** Entity label catalog for question NER (string match). */
+  listEntityCatalog?(input: {
+    collectionId: string;
+  }): Promise<Array<{ entityId: string; label: string; typeId: string }>>;
 }

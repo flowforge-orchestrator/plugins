@@ -12,6 +12,7 @@ const entries = {
   'ui.form.index': resolve(uiRoot, 'src/entries/form-index.ts'),
   'ui.form.search': resolve(uiRoot, 'src/entries/form-search.ts'),
   'ui.form.ask': resolve(uiRoot, 'src/entries/form-ask.ts'),
+  'ui.form.validate': resolve(uiRoot, 'src/entries/form-validate.ts'),
   'ui.form.stats-pipeline': resolve(uiRoot, 'src/entries/form-stats-pipeline.ts'),
   'ui.form.stats-chat': resolve(uiRoot, 'src/entries/form-stats-chat.ts'),
   'ui.widget.rag.plan': resolve(uiRoot, 'src/entries/widget-plan.ts'),

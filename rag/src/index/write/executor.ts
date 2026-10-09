@@ -13,6 +13,7 @@ import type {
   OntologySchema,
   RagChunk,
 } from '../../contracts/types';
+import { isLeafChunk } from '../../contracts/types';
 import { fromJsonPort } from '../../internal/json-port';
 
 class InputDto {
@@ -134,16 +135,20 @@ export class RagIndexWriteExecutor {
     const schema = fromJsonPort(ctx.inputs.schema, ctx.inputs.schema);
     const entities = fromJsonPort(ctx.inputs.entities, [] as NonNullable<typeof ctx.inputs.entities>);
     const relations = fromJsonPort(ctx.inputs.relations, [] as NonNullable<typeof ctx.inputs.relations>);
+    const leafChunks = chunks.filter((c) => isLeafChunk(c));
     const embedded = await services.embedder.embed(
-      chunks.map((c) => c.text),
+      leafChunks.map((c) => c.text),
       ctx.inputs.embeddingApiKey,
     );
     const vectorStats = await services.vectors.upsertChunks({
       collectionId: ctx.inputs.collectionId,
       docId: ctx.inputs.docId,
-      chunks,
+      chunks: leafChunks,
       vectors: embedded.vectors,
     });
+    const mentions = (await services.ontology.listMentions(
+      ctx.inputs.collectionId,
+    )).filter((m) => m.docId === ctx.inputs.docId);
     const graphStats = await services.graph.upsertGraph({
       collectionId: ctx.inputs.collectionId,
       docId: ctx.inputs.docId,
@@ -151,6 +156,7 @@ export class RagIndexWriteExecutor {
       entities,
       relations,
       chunks,
+      mentions,
     });
     await services.ontology.saveSchema(
       ctx.inputs.collectionId,

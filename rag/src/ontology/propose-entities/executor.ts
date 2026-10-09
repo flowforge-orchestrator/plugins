@@ -87,7 +87,9 @@ export class RagOntologyProposeEntitiesExecutor {
     const services = getRagServices();
     const stored = await services.ontology.loadSchema(ctx.inputs.collectionId);
     const schema = fromJsonPort(ctx.inputs.schema, stored) ?? stored;
-    const chunks = fromJsonPort<RagChunk[]>(ctx.inputs.chunks, []);
+    const chunks = fromJsonPort<RagChunk[]>(ctx.inputs.chunks, []).filter(
+      (c) => c.level == null || c.level === 'chunk',
+    );
     const sample = chunks
       .slice(0, 12)
       .map((c) => ({ headingPath: c.headingPath, text: c.text.slice(0, 500) }));
@@ -95,16 +97,25 @@ export class RagOntologyProposeEntitiesExecutor {
       entityTypes?: EntityTypeDecl[];
     }>({
       apiKey: ctx.inputs.apiKey,
-      systemPrompt:
-        'Propose ontology entity types for a document collection. Return JSON {"entityTypes":[{"id","parent","description","identity"}]}. Prefer existing schema ids when possible.',
+      systemPrompt: [
+        'Propose ontology entity types for a document collection.',
+        'Return JSON {"entityTypes":[{"id","parent","description","identity"}]}.',
+        'Reuse existing schema ids whenever the concept fits — do not invent a new subtype per paper.',
+        'Only propose a NEW id when no existing type covers the concept even as a parent.',
+        'If the schema already has 8+ types, prefer returning only existing ids (or []).',
+      ].join(' '),
       userPrompt: JSON.stringify({ schema, sample }, null, 2),
     });
-    const candidateTypes = payload.entityTypes ?? [];
-    const existing = new Set(
-      (schema.entityTypes ?? emptySchema().entityTypes).map((t) =>
-        t.id.toLowerCase(),
-      ),
-    );
+    const existingTypes = schema.entityTypes ?? emptySchema().entityTypes;
+    const existing = new Set(existingTypes.map((t) => t.id.toLowerCase()));
+    const raw = payload.entityTypes ?? [];
+    // When the schema is already rich, drop novel ids — map via parent or skip.
+    const saturated = existingTypes.length >= 8;
+    const candidateTypes = raw.filter((t) => {
+      if (existing.has(t.id.toLowerCase())) return true;
+      if (!saturated) return true;
+      return false;
+    });
     const matchedExisting = candidateTypes.filter((t) =>
       existing.has(t.id.toLowerCase()),
     ).length;

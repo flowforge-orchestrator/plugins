@@ -55,11 +55,24 @@ class InputDto {
   @Min(32)
   @FieldDecorator({
     type: 'number',
-    label: 'Макс. токенов',
+    label: 'Макс. токенов (legacy)',
+    description: 'Используется если maxChars не задан (×4 → символы)',
+    static: true,
+    default: 100,
+  })
+  maxTokens!: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(64)
+  @FieldDecorator({
+    type: 'number',
+    label: 'Макс. символов листа',
+    description: 'Целевой размер leaf-чанка (~400)',
     static: true,
     default: 400,
   })
-  maxTokens!: number;
+  maxChars?: number;
 
   @IsInt()
   @Min(0)
@@ -67,9 +80,20 @@ class InputDto {
     type: 'number',
     label: 'Overlap токенов',
     static: true,
-    default: 40,
+    default: 10,
   })
   overlapTokens!: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @FieldDecorator({
+    type: 'number',
+    label: 'Overlap символов',
+    static: true,
+    default: 40,
+  })
+  overlapChars?: number;
 
   @IsOptional()
   @IsInt()
@@ -104,7 +128,8 @@ class OutputDto {
 @Executor<InputDto, OutputDto>({
   nodeType: 'plugin.rag.chunk',
   name: 'RAG: нарезать чанки',
-  description: 'Структурная нарезка блоков в чанки с overlap и parentId.',
+  description:
+    'Иерархия doc→section→paragraph→leaf(~400 символов); в вектор уходят только листья.',
   help,
   pluginId: 'rag',
   inputs: InputDto,
@@ -121,9 +146,11 @@ export class RagChunkExecutor {
       blocks,
       docId: ctx.inputs.docId,
       strategy: ctx.inputs.strategy ?? 'recursive',
-      maxTokens: Number(ctx.inputs.maxTokens ?? 400),
-      overlapTokens: Number(ctx.inputs.overlapTokens ?? 40),
+      maxTokens: Number(ctx.inputs.maxTokens ?? 100),
+      overlapTokens: Number(ctx.inputs.overlapTokens ?? 10),
       hardMaxTokens: ctx.inputs.hardMaxTokens,
+      maxChars: Number(ctx.inputs.maxChars ?? 400),
+      overlapChars: Number(ctx.inputs.overlapChars ?? 40),
     });
     return {
       chunks: toJsonPort(result.chunks),

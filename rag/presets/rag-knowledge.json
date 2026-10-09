@@ -1,0 +1,6877 @@
+{
+  "id": "rag-knowledge",
+  "version": 1,
+  "pluginId": "rag",
+  "metadata": {
+    "name": "RAG Knowledge",
+    "description": "Knowledge engine: слои (Интерпретация…Сбор workspace), пайплайны (документ/конфликт/ответ/перенос), приём (PDF/DOC/Excel/arXiv). После импорта перепривяжите system.process.call: diagramId __BIND__:<имя процесса> → реальный id процесса с тем же settings.name. См. plugins/rag/presets/rag-knowledge-BINDING.md"
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "Интерпретация",
+        "description": "Evidence commit → extract → chunk → interpret.observations. Webhook. Выход: пакет S1.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "documentText",
+            "docId",
+            "collectionId",
+            "observedAt",
+            "source",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-evidence",
+          "label": "Evidence commit",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.evidence.commit",
+            "label": "RAG: зафиксировать evidence"
+          },
+          "config": [
+            {
+              "name": "text",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "evidence",
+            "duplicate"
+          ]
+        },
+        {
+          "id": "w-extract",
+          "label": "Extract",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.extract",
+            "label": "RAG: извлечь документ"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "blocks",
+            "pageCoverage",
+            "blockCount"
+          ]
+        },
+        {
+          "id": "w-chunk",
+          "label": "Chunk",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.chunk",
+            "label": "RAG: нарезать чанки"
+          },
+          "config": [
+            {
+              "name": "blocks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "strategy",
+              "type": "select",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "recursive"
+            },
+            {
+              "name": "maxTokens",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 400
+            },
+            {
+              "name": "overlapTokens",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 40
+            }
+          ],
+          "outputs": [
+            "chunks",
+            "lengthHistogram",
+            "chunkCount"
+          ]
+        },
+        {
+          "id": "w-interpret",
+          "label": "Interpret",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.interpret.observations",
+            "label": "RAG: интерпретировать наблюдения"
+          },
+          "config": [
+            {
+              "name": "evidence",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "raw",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidateLimit",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 50
+            }
+          ],
+          "outputs": [
+            "observations"
+          ]
+        },
+        {
+          "id": "w-evid-id",
+          "label": "Evidence id",
+          "position": {
+            "x": 1120,
+            "y": 160
+          },
+          "source": {
+            "nodeType": "system.object.extract",
+            "label": "Извлечение полей"
+          },
+          "config": [
+            {
+              "name": "map",
+              "type": "keyvalue",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "{\"evidenceId\":\"id\"}",
+              "isPrimary": true
+            },
+            {
+              "name": "source",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "evidenceId"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "evidence",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "duplicate",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "chunks",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "documentText",
+          "target": "w-evidence",
+          "targetHandle": "text"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-evidence",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-evidence",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-evidence",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-evidence",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "documentText",
+          "target": "w-extract",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-extract",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e8",
+          "source": "w-extract",
+          "sourceHandle": "blocks",
+          "target": "w-chunk",
+          "targetHandle": "blocks"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-chunk",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e10",
+          "source": "w-evidence",
+          "sourceHandle": "evidence",
+          "target": "w-interpret",
+          "targetHandle": "evidence"
+        },
+        {
+          "id": "e11",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-interpret",
+          "targetHandle": "chunks"
+        },
+        {
+          "id": "e12",
+          "source": "w-evidence",
+          "sourceHandle": "evidence",
+          "target": "w-evid-id",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e13",
+          "source": "w-interpret",
+          "sourceHandle": "observations",
+          "target": "w-output",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "e14",
+          "source": "w-evidence",
+          "sourceHandle": "evidence",
+          "target": "w-output",
+          "targetHandle": "evidence"
+        },
+        {
+          "id": "e15",
+          "source": "w-evid-id",
+          "sourceHandle": "evidenceId",
+          "target": "w-output",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e16",
+          "source": "w-evidence",
+          "sourceHandle": "duplicate",
+          "target": "w-output",
+          "targetHandle": "duplicate"
+        },
+        {
+          "id": "e17",
+          "source": "w-chunk",
+          "sourceHandle": "chunks",
+          "target": "w-output",
+          "targetHandle": "chunks"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Разрешение",
+        "description": "entity → concept → claim.resolve. Пакет S1; ambiguous на выходе. Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "existingConcepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existingClaims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conceptCandidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "claimCandidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "observations",
+            "collectionId",
+            "existingConcepts",
+            "existingClaims",
+            "conceptCandidate",
+            "claimCandidate",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-mentions",
+          "label": "Mentions",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.object.extract",
+            "label": "Извлечение полей"
+          },
+          "config": [
+            {
+              "name": "map",
+              "type": "keyvalue",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "{\"mentions\":\"entityMentions\",\"conceptMentions\":\"conceptMentions\",\"claimCandidates\":\"claimCandidates\"}",
+              "isPrimary": true
+            },
+            {
+              "name": "source",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "mentions",
+            "conceptMentions",
+            "claimCandidates"
+          ]
+        },
+        {
+          "id": "w-entity",
+          "label": "Entity resolve",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.entity.resolve",
+            "label": "RAG: разрешить сущности"
+          },
+          "config": [
+            {
+              "name": "mentions",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ambiguityThreshold",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 0.15
+            }
+          ],
+          "outputs": [
+            "entities",
+            "decisions",
+            "merged",
+            "created",
+            "rebound"
+          ]
+        },
+        {
+          "id": "w-concept-first",
+          "label": "First concept",
+          "position": {
+            "x": 560,
+            "y": 180
+          },
+          "source": {
+            "nodeType": "system.array.first",
+            "label": "Array: первый"
+          },
+          "config": [
+            {
+              "name": "items",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "item"
+          ]
+        },
+        {
+          "id": "w-cand-fb",
+          "label": "Concept candidate",
+          "position": {
+            "x": 840,
+            "y": 180
+          },
+          "source": {
+            "nodeType": "system.string.fallback",
+            "label": "String: fallback"
+          },
+          "config": [
+            {
+              "name": "primary",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "fallback",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-concept",
+          "label": "Concept resolve",
+          "position": {
+            "x": 1120,
+            "y": 180
+          },
+          "source": {
+            "nodeType": "plugin.rag.concept.resolve",
+            "label": "RAG: разрешить понятие"
+          },
+          "config": [
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "decision",
+            "conceptId"
+          ]
+        },
+        {
+          "id": "w-claim-first",
+          "label": "First claim",
+          "position": {
+            "x": 560,
+            "y": 360
+          },
+          "source": {
+            "nodeType": "system.array.first",
+            "label": "Array: первый"
+          },
+          "config": [
+            {
+              "name": "items",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "item"
+          ]
+        },
+        {
+          "id": "w-claim-fb",
+          "label": "Claim candidate",
+          "position": {
+            "x": 840,
+            "y": 360
+          },
+          "source": {
+            "nodeType": "system.string.fallback",
+            "label": "String: fallback"
+          },
+          "config": [
+            {
+              "name": "primary",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "fallback",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-claim",
+          "label": "Claim resolve",
+          "position": {
+            "x": 1120,
+            "y": 360
+          },
+          "source": {
+            "nodeType": "plugin.rag.claim.resolve",
+            "label": "RAG: разрешить claim"
+          },
+          "config": [
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "windowToleranceDays",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 0
+            }
+          ],
+          "outputs": [
+            "decision"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "entityDecisions",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conceptDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conceptId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "claimDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "observations",
+          "target": "w-mentions",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e2",
+          "source": "w-mentions",
+          "sourceHandle": "mentions",
+          "target": "w-entity",
+          "targetHandle": "mentions"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-entity",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e4",
+          "source": "w-mentions",
+          "sourceHandle": "conceptMentions",
+          "target": "w-concept-first",
+          "targetHandle": "items"
+        },
+        {
+          "id": "e5",
+          "source": "w-concept-first",
+          "sourceHandle": "item",
+          "target": "w-cand-fb",
+          "targetHandle": "fallback"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "conceptCandidate",
+          "target": "w-cand-fb",
+          "targetHandle": "primary"
+        },
+        {
+          "id": "e7",
+          "source": "w-cand-fb",
+          "sourceHandle": "string",
+          "target": "w-concept",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "existingConcepts",
+          "target": "w-concept",
+          "targetHandle": "existing"
+        },
+        {
+          "id": "e9",
+          "source": "w-mentions",
+          "sourceHandle": "claimCandidates",
+          "target": "w-claim-first",
+          "targetHandle": "items"
+        },
+        {
+          "id": "e10",
+          "source": "w-claim-first",
+          "sourceHandle": "item",
+          "target": "w-claim-fb",
+          "targetHandle": "fallback"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "claimCandidate",
+          "target": "w-claim-fb",
+          "targetHandle": "primary"
+        },
+        {
+          "id": "e12",
+          "source": "w-claim-fb",
+          "sourceHandle": "string",
+          "target": "w-claim",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e13",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-claim",
+          "targetHandle": "existing"
+        },
+        {
+          "id": "e14",
+          "source": "w-entity",
+          "sourceHandle": "decisions",
+          "target": "w-output",
+          "targetHandle": "entityDecisions"
+        },
+        {
+          "id": "e15",
+          "source": "w-entity",
+          "sourceHandle": "entities",
+          "target": "w-output",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e16",
+          "source": "w-concept",
+          "sourceHandle": "decision",
+          "target": "w-output",
+          "targetHandle": "conceptDecision"
+        },
+        {
+          "id": "e17",
+          "source": "w-concept",
+          "sourceHandle": "conceptId",
+          "target": "w-output",
+          "targetHandle": "conceptId"
+        },
+        {
+          "id": "e18",
+          "source": "w-claim",
+          "sourceHandle": "decision",
+          "target": "w-output",
+          "targetHandle": "claimDecision"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Сверка",
+        "description": "switch по ClaimDecision.kind; conflict → conflict.policy. Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "claimDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "left",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "right",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "claimDecision",
+            "left",
+            "right",
+            "candidate",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-kind",
+          "label": "Decision kind",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.object.extract",
+            "label": "Извлечение полей"
+          },
+          "config": [
+            {
+              "name": "map",
+              "type": "keyvalue",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "{\"kind\":\"kind\"}",
+              "isPrimary": true
+            },
+            {
+              "name": "source",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "kind"
+          ]
+        },
+        {
+          "id": "w-switch",
+          "label": "ClaimDecision",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.control.switch",
+            "label": "Control: switch"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "new",
+            "duplicate",
+            "conflict"
+          ]
+        },
+        {
+          "id": "w-policy",
+          "label": "Conflict policy",
+          "position": {
+            "x": 840,
+            "y": 160
+          },
+          "source": {
+            "nodeType": "plugin.rag.conflict.policy",
+            "label": "RAG: политика конфликта"
+          },
+          "config": [
+            {
+              "name": "left",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "right",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "sameDefinition",
+              "type": "boolean",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": true
+            },
+            {
+              "name": "samePeriodRequiresOverlap",
+              "type": "boolean",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": true
+            }
+          ],
+          "outputs": [
+            "branch"
+          ]
+        },
+        {
+          "id": "w-pass-new",
+          "label": "Pass new",
+          "position": {
+            "x": 840,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.control.pass",
+            "label": "Control: pass"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-pass-dup",
+          "label": "Pass duplicate",
+          "position": {
+            "x": 840,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "system.control.pass",
+            "label": "Control: pass"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "claimDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "reviewItem",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "claimDecision",
+          "target": "w-kind",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e2",
+          "source": "w-kind",
+          "sourceHandle": "kind",
+          "target": "w-switch",
+          "targetHandle": "value"
+        },
+        {
+          "id": "e3",
+          "source": "w-switch",
+          "sourceHandle": "conflict",
+          "target": "w-policy",
+          "targetHandle": "enabled"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "left",
+          "target": "w-policy",
+          "targetHandle": "left"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "right",
+          "target": "w-policy",
+          "targetHandle": "right"
+        },
+        {
+          "id": "e6",
+          "source": "w-switch",
+          "sourceHandle": "new",
+          "target": "w-pass-new",
+          "targetHandle": "enabled"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "claimDecision",
+          "target": "w-pass-new",
+          "targetHandle": "value"
+        },
+        {
+          "id": "e8",
+          "source": "w-switch",
+          "sourceHandle": "duplicate",
+          "target": "w-pass-dup",
+          "targetHandle": "enabled"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "claimDecision",
+          "target": "w-pass-dup",
+          "targetHandle": "value"
+        },
+        {
+          "id": "e10",
+          "source": "w-policy",
+          "sourceHandle": "branch",
+          "target": "w-output",
+          "targetHandle": "branch"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "claimDecision",
+          "target": "w-output",
+          "targetHandle": "claimDecision"
+        },
+        {
+          "id": "e12",
+          "source": "w-trigger",
+          "sourceHandle": "candidate",
+          "target": "w-output",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e13",
+          "source": "w-policy",
+          "sourceHandle": "branch",
+          "target": "w-output",
+          "targetHandle": "reviewItem"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Фиксация",
+        "description": "claim.commit + ontology.evolve. Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "decision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "candidate",
+            "decision",
+            "branch",
+            "existing",
+            "source",
+            "assertedAt",
+            "ontologyDecision",
+            "evidenceId",
+            "currentSchemaVersion",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-commit",
+          "label": "Claim commit",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.claim.commit",
+            "label": "RAG: зафиксировать claim"
+          },
+          "config": [
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "decision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "claim",
+            "statusUpdates",
+            "reused"
+          ]
+        },
+        {
+          "id": "w-claim-id",
+          "label": "Claim id",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.object.extract",
+            "label": "Извлечение полей"
+          },
+          "config": [
+            {
+              "name": "map",
+              "type": "keyvalue",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "{\"claimId\":\"claimId\",\"status\":\"status\"}",
+              "isPrimary": true
+            },
+            {
+              "name": "source",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "claimId",
+            "status"
+          ]
+        },
+        {
+          "id": "w-evolve",
+          "label": "Ontology evolve",
+          "position": {
+            "x": 280,
+            "y": 200
+          },
+          "source": {
+            "nodeType": "plugin.rag.ontology.evolve",
+            "label": "RAG: эволюция онтологии"
+          },
+          "config": [
+            {
+              "name": "decision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "entry",
+            "schemaVersion"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "claim",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "claimId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "status",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "statusUpdates",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "reused",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "schemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyEntry",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "candidate",
+          "target": "w-commit",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "decision",
+          "target": "w-commit",
+          "targetHandle": "decision"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "branch",
+          "target": "w-commit",
+          "targetHandle": "branch"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "existing",
+          "target": "w-commit",
+          "targetHandle": "existing"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-commit",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "assertedAt",
+          "target": "w-commit",
+          "targetHandle": "assertedAt"
+        },
+        {
+          "id": "e7",
+          "source": "w-commit",
+          "sourceHandle": "claim",
+          "target": "w-claim-id",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "ontologyDecision",
+          "target": "w-evolve",
+          "targetHandle": "decision"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "evidenceId",
+          "target": "w-evolve",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e10",
+          "source": "w-trigger",
+          "sourceHandle": "currentSchemaVersion",
+          "target": "w-evolve",
+          "targetHandle": "currentSchemaVersion"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "assertedAt",
+          "target": "w-evolve",
+          "targetHandle": "assertedAt"
+        },
+        {
+          "id": "e12",
+          "source": "w-commit",
+          "sourceHandle": "claim",
+          "target": "w-output",
+          "targetHandle": "claim"
+        },
+        {
+          "id": "e13",
+          "source": "w-claim-id",
+          "sourceHandle": "claimId",
+          "target": "w-output",
+          "targetHandle": "claimId"
+        },
+        {
+          "id": "e14",
+          "source": "w-claim-id",
+          "sourceHandle": "status",
+          "target": "w-output",
+          "targetHandle": "status"
+        },
+        {
+          "id": "e15",
+          "source": "w-commit",
+          "sourceHandle": "statusUpdates",
+          "target": "w-output",
+          "targetHandle": "statusUpdates"
+        },
+        {
+          "id": "e16",
+          "source": "w-commit",
+          "sourceHandle": "reused",
+          "target": "w-output",
+          "targetHandle": "reused"
+        },
+        {
+          "id": "e17",
+          "source": "w-evolve",
+          "sourceHandle": "schemaVersion",
+          "target": "w-output",
+          "targetHandle": "schemaVersion"
+        },
+        {
+          "id": "e18",
+          "source": "w-evolve",
+          "sourceHandle": "entry",
+          "target": "w-output",
+          "targetHandle": "ontologyEntry"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Проекция",
+        "description": "derive.current → derive.project. Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "subject",
+            "predicate",
+            "claims",
+            "asOf",
+            "affectedIds",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-current",
+          "label": "Derive current",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.derive.current",
+            "label": "RAG: текущее значение"
+          },
+          "config": [
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "derived"
+          ]
+        },
+        {
+          "id": "w-project",
+          "label": "Derive project",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.derive.project",
+            "label": "RAG: проекция"
+          },
+          "config": [
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "projection",
+              "type": "select",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "all"
+            }
+          ],
+          "outputs": [
+            "projection",
+            "requested",
+            "projected",
+            "skipped",
+            "ok",
+            "error"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "derived",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "projection",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "requested",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "projected",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "skipped",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ok",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "subject",
+          "target": "w-current",
+          "targetHandle": "subject"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "predicate",
+          "target": "w-current",
+          "targetHandle": "predicate"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "claims",
+          "target": "w-current",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "asOf",
+          "target": "w-current",
+          "targetHandle": "asOf"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "affectedIds",
+          "target": "w-project",
+          "targetHandle": "affectedIds"
+        },
+        {
+          "id": "e6",
+          "source": "w-current",
+          "sourceHandle": "derived",
+          "target": "w-output",
+          "targetHandle": "derived"
+        },
+        {
+          "id": "e7",
+          "source": "w-project",
+          "sourceHandle": "projection",
+          "target": "w-output",
+          "targetHandle": "projection"
+        },
+        {
+          "id": "e8",
+          "source": "w-project",
+          "sourceHandle": "requested",
+          "target": "w-output",
+          "targetHandle": "requested"
+        },
+        {
+          "id": "e9",
+          "source": "w-project",
+          "sourceHandle": "projected",
+          "target": "w-output",
+          "targetHandle": "projected"
+        },
+        {
+          "id": "e10",
+          "source": "w-project",
+          "sourceHandle": "skipped",
+          "target": "w-output",
+          "targetHandle": "skipped"
+        },
+        {
+          "id": "e11",
+          "source": "w-project",
+          "sourceHandle": "ok",
+          "target": "w-output",
+          "targetHandle": "ok"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Сбор workspace",
+        "description": "find.claims/entities/evidence → workspace.build. Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "question",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidence",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "events",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "concepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "timeWindow",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "query",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "question",
+            "collectionId",
+            "claims",
+            "entities",
+            "evidence",
+            "events",
+            "concepts",
+            "timeWindow",
+            "query",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-find-claims",
+          "label": "Find claims",
+          "position": {
+            "x": 280,
+            "y": -120
+          },
+          "source": {
+            "nodeType": "plugin.rag.find.claims",
+            "label": "RAG: найти claims"
+          },
+          "config": [
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "timeWindow",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 50
+            }
+          ],
+          "outputs": [
+            "records",
+            "evidenceIds"
+          ]
+        },
+        {
+          "id": "w-find-entities",
+          "label": "Find entities",
+          "position": {
+            "x": 280,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "plugin.rag.find.entities",
+            "label": "RAG: найти сущности"
+          },
+          "config": [
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "query",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 50
+            }
+          ],
+          "outputs": [
+            "records"
+          ]
+        },
+        {
+          "id": "w-find-evidence",
+          "label": "Find evidence",
+          "position": {
+            "x": 280,
+            "y": 200
+          },
+          "source": {
+            "nodeType": "plugin.rag.find.evidence",
+            "label": "RAG: найти evidence"
+          },
+          "config": [
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "evidence",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "query",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "timeWindow",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 50
+            }
+          ],
+          "outputs": [
+            "records"
+          ]
+        },
+        {
+          "id": "w-build",
+          "label": "Workspace build",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.workspace.build",
+            "label": "RAG: собрать workspace"
+          },
+          "config": [
+            {
+              "name": "question",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "concepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidence",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "timeWindow",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "budget",
+              "type": "textarea",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "{\"maxEntities\":100,\"maxClaims\":500,\"maxEvidence\":50,\"maxConcepts\":30}"
+            }
+          ],
+          "outputs": [
+            "workspace"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "workspace",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-find-claims",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "claims",
+          "target": "w-find-claims",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "timeWindow",
+          "target": "w-find-claims",
+          "targetHandle": "timeWindow"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-find-entities",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "entities",
+          "target": "w-find-entities",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-find-entities",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-find-evidence",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "evidence",
+          "target": "w-find-evidence",
+          "targetHandle": "evidence"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-find-evidence",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e10",
+          "source": "w-trigger",
+          "sourceHandle": "timeWindow",
+          "target": "w-find-evidence",
+          "targetHandle": "timeWindow"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "question",
+          "target": "w-build",
+          "targetHandle": "question"
+        },
+        {
+          "id": "e12",
+          "source": "w-find-entities",
+          "sourceHandle": "records",
+          "target": "w-build",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e13",
+          "source": "w-find-claims",
+          "sourceHandle": "records",
+          "target": "w-build",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e14",
+          "source": "w-find-evidence",
+          "sourceHandle": "records",
+          "target": "w-build",
+          "targetHandle": "evidence"
+        },
+        {
+          "id": "e15",
+          "source": "w-trigger",
+          "sourceHandle": "concepts",
+          "target": "w-build",
+          "targetHandle": "concepts"
+        },
+        {
+          "id": "e16",
+          "source": "w-trigger",
+          "sourceHandle": "timeWindow",
+          "target": "w-build",
+          "targetHandle": "timeWindow"
+        },
+        {
+          "id": "e17",
+          "source": "w-build",
+          "sourceHandle": "workspace",
+          "target": "w-output",
+          "targetHandle": "workspace"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Знание: документ",
+        "description": "Цепочка вызовов слоёв: Интерпретация → Разрешение → Сверка → Фиксация → Проекция. diagramId = __BIND__:<имя> — перепривязать после импорта.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existingConcepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existingClaims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "documentText",
+            "docId",
+            "collectionId",
+            "observedAt",
+            "source",
+            "existingConcepts",
+            "existingClaims",
+            "subject",
+            "predicate",
+            "asOf",
+            "affectedIds",
+            "ontologyDecision",
+            "currentSchemaVersion",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-call-interpret",
+          "label": "Интерпретация",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Интерпретация"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Интерпретация",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Интерпретация"
+            },
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "observations",
+            "evidence",
+            "evidenceId",
+            "duplicate",
+            "chunks"
+          ]
+        },
+        {
+          "id": "w-call-resolve",
+          "label": "Разрешение",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Разрешение"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Разрешение",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Разрешение"
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "existingConcepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existingClaims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "entityDecisions",
+            "entities",
+            "conceptDecision",
+            "conceptId",
+            "claimDecision"
+          ]
+        },
+        {
+          "id": "w-call-reconcile",
+          "label": "Сверка",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Сверка"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Сверка",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Сверка"
+            },
+            {
+              "name": "claimDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "left",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "right",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "branch",
+            "claimDecision",
+            "candidate",
+            "reviewItem"
+          ]
+        },
+        {
+          "id": "w-call-commit",
+          "label": "Фиксация",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Фиксация"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Фиксация",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Фиксация"
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "decision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "claim",
+            "claimId",
+            "status",
+            "statusUpdates",
+            "reused",
+            "schemaVersion",
+            "ontologyEntry"
+          ]
+        },
+        {
+          "id": "w-call-project",
+          "label": "Проекция",
+          "position": {
+            "x": 1400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Проекция"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Проекция",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Проекция"
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "derived",
+            "projection",
+            "requested",
+            "projected",
+            "skipped",
+            "ok"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1680,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "committedClaimIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conflictIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "schemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "claimId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "derived",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "documentText",
+          "target": "w-call-interpret",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-call-interpret",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-interpret",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-call-interpret",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-interpret",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e6",
+          "source": "w-call-interpret",
+          "sourceHandle": "observations",
+          "target": "w-call-resolve",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-resolve",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "existingConcepts",
+          "target": "w-call-resolve",
+          "targetHandle": "existingConcepts"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-resolve",
+          "targetHandle": "existingClaims"
+        },
+        {
+          "id": "e10",
+          "source": "w-call-resolve",
+          "sourceHandle": "claimDecision",
+          "target": "w-call-reconcile",
+          "targetHandle": "claimDecision"
+        },
+        {
+          "id": "e11",
+          "source": "w-call-reconcile",
+          "sourceHandle": "branch",
+          "target": "w-call-commit",
+          "targetHandle": "branch"
+        },
+        {
+          "id": "e12",
+          "source": "w-call-resolve",
+          "sourceHandle": "claimDecision",
+          "target": "w-call-commit",
+          "targetHandle": "decision"
+        },
+        {
+          "id": "e13",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-commit",
+          "targetHandle": "existing"
+        },
+        {
+          "id": "e14",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-commit",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e15",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-call-commit",
+          "targetHandle": "assertedAt"
+        },
+        {
+          "id": "e16",
+          "source": "w-call-interpret",
+          "sourceHandle": "evidenceId",
+          "target": "w-call-commit",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e17",
+          "source": "w-trigger",
+          "sourceHandle": "ontologyDecision",
+          "target": "w-call-commit",
+          "targetHandle": "ontologyDecision"
+        },
+        {
+          "id": "e18",
+          "source": "w-trigger",
+          "sourceHandle": "currentSchemaVersion",
+          "target": "w-call-commit",
+          "targetHandle": "currentSchemaVersion"
+        },
+        {
+          "id": "e19",
+          "source": "w-trigger",
+          "sourceHandle": "subject",
+          "target": "w-call-project",
+          "targetHandle": "subject"
+        },
+        {
+          "id": "e20",
+          "source": "w-trigger",
+          "sourceHandle": "predicate",
+          "target": "w-call-project",
+          "targetHandle": "predicate"
+        },
+        {
+          "id": "e21",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-project",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e22",
+          "source": "w-trigger",
+          "sourceHandle": "asOf",
+          "target": "w-call-project",
+          "targetHandle": "asOf"
+        },
+        {
+          "id": "e23",
+          "source": "w-trigger",
+          "sourceHandle": "affectedIds",
+          "target": "w-call-project",
+          "targetHandle": "affectedIds"
+        },
+        {
+          "id": "e24",
+          "source": "w-call-interpret",
+          "sourceHandle": "evidenceId",
+          "target": "w-output",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e30",
+          "source": "w-call-project",
+          "sourceHandle": "derived",
+          "target": "w-output",
+          "targetHandle": "derived"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Знание: конфликт",
+        "description": "Поздний конфликт (190 vs 210): Разрешение → Сверка → Фиксация → Проекция. Без повторного разбора документа. __BIND__ после импорта.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "acceptedClaim",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "existingClaims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existingConcepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "acceptedClaim",
+            "candidate",
+            "collectionId",
+            "existingClaims",
+            "existingConcepts",
+            "observations",
+            "source",
+            "assertedAt",
+            "subject",
+            "predicate",
+            "asOf",
+            "affectedIds",
+            "ontologyDecision",
+            "evidenceId",
+            "currentSchemaVersion",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-call-resolve",
+          "label": "Разрешение",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Разрешение"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Разрешение",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Разрешение"
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "existingConcepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existingClaims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "claimCandidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "entityDecisions",
+            "entities",
+            "conceptDecision",
+            "conceptId",
+            "claimDecision"
+          ]
+        },
+        {
+          "id": "w-call-reconcile",
+          "label": "Сверка",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Сверка"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Сверка",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Сверка"
+            },
+            {
+              "name": "claimDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "left",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "right",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "branch",
+            "claimDecision",
+            "candidate",
+            "reviewItem"
+          ]
+        },
+        {
+          "id": "w-call-commit",
+          "label": "Фиксация",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Фиксация"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Фиксация",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Фиксация"
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "decision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "claim",
+            "claimId",
+            "status",
+            "statusUpdates",
+            "reused",
+            "schemaVersion",
+            "ontologyEntry"
+          ]
+        },
+        {
+          "id": "w-call-project",
+          "label": "Проекция",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Проекция"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Проекция",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Проекция"
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "derived",
+            "projection",
+            "requested",
+            "projected",
+            "skipped",
+            "ok"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "claimId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conflictIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "schemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "derived",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "observations",
+          "target": "w-call-resolve",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-resolve",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "existingConcepts",
+          "target": "w-call-resolve",
+          "targetHandle": "existingConcepts"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-resolve",
+          "targetHandle": "existingClaims"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "candidate",
+          "target": "w-call-resolve",
+          "targetHandle": "claimCandidate"
+        },
+        {
+          "id": "e6",
+          "source": "w-call-resolve",
+          "sourceHandle": "claimDecision",
+          "target": "w-call-reconcile",
+          "targetHandle": "claimDecision"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "acceptedClaim",
+          "target": "w-call-reconcile",
+          "targetHandle": "left"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "candidate",
+          "target": "w-call-reconcile",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "candidate",
+          "target": "w-call-commit",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e10",
+          "source": "w-call-resolve",
+          "sourceHandle": "claimDecision",
+          "target": "w-call-commit",
+          "targetHandle": "decision"
+        },
+        {
+          "id": "e11",
+          "source": "w-call-reconcile",
+          "sourceHandle": "branch",
+          "target": "w-call-commit",
+          "targetHandle": "branch"
+        },
+        {
+          "id": "e12",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-commit",
+          "targetHandle": "existing"
+        },
+        {
+          "id": "e13",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-commit",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e14",
+          "source": "w-trigger",
+          "sourceHandle": "assertedAt",
+          "target": "w-call-commit",
+          "targetHandle": "assertedAt"
+        },
+        {
+          "id": "e15",
+          "source": "w-trigger",
+          "sourceHandle": "ontologyDecision",
+          "target": "w-call-commit",
+          "targetHandle": "ontologyDecision"
+        },
+        {
+          "id": "e16",
+          "source": "w-trigger",
+          "sourceHandle": "evidenceId",
+          "target": "w-call-commit",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e17",
+          "source": "w-trigger",
+          "sourceHandle": "currentSchemaVersion",
+          "target": "w-call-commit",
+          "targetHandle": "currentSchemaVersion"
+        },
+        {
+          "id": "e18",
+          "source": "w-trigger",
+          "sourceHandle": "subject",
+          "target": "w-call-project",
+          "targetHandle": "subject"
+        },
+        {
+          "id": "e19",
+          "source": "w-trigger",
+          "sourceHandle": "predicate",
+          "target": "w-call-project",
+          "targetHandle": "predicate"
+        },
+        {
+          "id": "e20",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-project",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e21",
+          "source": "w-trigger",
+          "sourceHandle": "asOf",
+          "target": "w-call-project",
+          "targetHandle": "asOf"
+        },
+        {
+          "id": "e22",
+          "source": "w-trigger",
+          "sourceHandle": "affectedIds",
+          "target": "w-call-project",
+          "targetHandle": "affectedIds"
+        },
+        {
+          "id": "e23",
+          "source": "w-call-commit",
+          "sourceHandle": "claimId",
+          "target": "w-output",
+          "targetHandle": "claimId"
+        },
+        {
+          "id": "e24",
+          "source": "w-call-reconcile",
+          "sourceHandle": "branch",
+          "target": "w-output",
+          "targetHandle": "branch"
+        },
+        {
+          "id": "e25",
+          "source": "w-call-reconcile",
+          "sourceHandle": "reviewItem",
+          "target": "w-output",
+          "targetHandle": "conflictIds"
+        },
+        {
+          "id": "e26",
+          "source": "w-call-commit",
+          "sourceHandle": "schemaVersion",
+          "target": "w-output",
+          "targetHandle": "schemaVersion"
+        },
+        {
+          "id": "e27",
+          "source": "w-call-project",
+          "sourceHandle": "derived",
+          "target": "w-output",
+          "targetHandle": "derived"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Ответ",
+        "description": "Сбор workspace → loop/agent.turn (только find.* + propose.*) → synthesize → safety. Proposal может уйти в Сверку/Фиксацию/Проекцию. __BIND__ после импорта. Не затрагивает RAG: чат.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "question",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidence",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "concepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "timeWindow",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "query",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "proposalCandidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existingClaims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "question",
+            "collectionId",
+            "claims",
+            "entities",
+            "evidence",
+            "concepts",
+            "timeWindow",
+            "query",
+            "proposalCandidate",
+            "existingClaims",
+            "source",
+            "assertedAt",
+            "subject",
+            "predicate",
+            "asOf",
+            "affectedIds",
+            "ontologyDecision",
+            "evidenceId",
+            "currentSchemaVersion",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-call-workspace",
+          "label": "Сбор workspace",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Сбор workspace"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Сбор workspace",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Сбор workspace"
+            },
+            {
+              "name": "question",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "entities",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidence",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "concepts",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "timeWindow",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "query",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "workspace"
+          ]
+        },
+        {
+          "id": "w-loop",
+          "label": "Agent loop",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.loop",
+            "label": "Loop"
+          },
+          "config": [
+            {
+              "name": "items",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "maxIterations",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 6
+            }
+          ],
+          "outputs": [
+            "items"
+          ]
+        },
+        {
+          "id": "w-turn",
+          "label": "Agent turn",
+          "position": {
+            "x": 560,
+            "y": 200
+          },
+          "source": {
+            "nodeType": "plugin.rag.agent.turn",
+            "label": "RAG: ход агента"
+          },
+          "config": [
+            {
+              "name": "userPrompt",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "history",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "tools",
+              "type": "textarea",
+              "isPort": false,
+              "canBePort": true,
+              "static": true,
+              "defaultValue": "[{\"id\":\"find_claims\",\"description\":\"Найти claims в каноне по субъекту/предикату/окну\",\"nodeType\":\"plugin.rag.find.claims\"},{\"id\":\"find_entities\",\"description\":\"Найти сущности\",\"nodeType\":\"plugin.rag.find.entities\"},{\"id\":\"find_evidence\",\"description\":\"Найти evidence\",\"nodeType\":\"plugin.rag.find.evidence\"},{\"id\":\"find_events\",\"description\":\"Найти события\",\"nodeType\":\"plugin.rag.find.events\"},{\"id\":\"inspect_history\",\"description\":\"История claim по субъекту и предикату\",\"nodeType\":\"plugin.rag.inspect.history\"},{\"id\":\"compare_periods\",\"description\":\"Сравнить claims в двух окнах\",\"nodeType\":\"plugin.rag.compare.periods\"},{\"id\":\"propose_claim\",\"description\":\"Предложить claim (не пишет S2)\",\"nodeType\":\"plugin.rag.propose.claim\"},{\"id\":\"propose_relation\",\"description\":\"Предложить relation (не пишет S2)\",\"nodeType\":\"plugin.rag.propose.relation\"},{\"id\":\"propose_concept\",\"description\":\"Предложить понятие (не пишет S2)\",\"nodeType\":\"plugin.rag.propose.concept\"},{\"id\":\"propose_alias\",\"description\":\"Предложить alias (не пишет S2)\",\"nodeType\":\"plugin.rag.propose.alias\"}]"
+            },
+            {
+              "name": "skills",
+              "type": "textarea",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "[{\"id\":\"knowledge\",\"body\":\"Use only find.* to read canon and propose.* to suggest changes. Do not write S2 directly.\"}]"
+            },
+            {
+              "name": "maxActions",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 4
+            },
+            {
+              "name": "queryTool",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "find_claims"
+            }
+          ],
+          "outputs": [
+            "op",
+            "query",
+            "args",
+            "actions",
+            "answer",
+            "observations",
+            "metrics",
+            "history"
+          ]
+        },
+        {
+          "id": "w-find-claims",
+          "label": "Find claims",
+          "position": {
+            "x": 840,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "plugin.rag.find.claims",
+            "label": "RAG: найти claims"
+          },
+          "config": [
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "query",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "limit",
+              "type": "number",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": 50
+            }
+          ],
+          "outputs": [
+            "records",
+            "evidenceIds"
+          ]
+        },
+        {
+          "id": "w-propose-claim",
+          "label": "Propose claim",
+          "position": {
+            "x": 840,
+            "y": 200
+          },
+          "source": {
+            "nodeType": "plugin.rag.propose.claim",
+            "label": "RAG: предложить claim"
+          },
+          "config": [
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "object",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "span",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "validFrom",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "validTo",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "proposal"
+          ]
+        },
+        {
+          "id": "w-synth",
+          "label": "Synthesize",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.synthesize",
+            "label": "RAG: синтез ответа"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "observations",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "answer"
+          ]
+        },
+        {
+          "id": "w-safe",
+          "label": "Safety",
+          "position": {
+            "x": 1400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.safety",
+            "label": "RAG: safety"
+          },
+          "config": [
+            {
+              "name": "answer",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "answer",
+            "blocked"
+          ]
+        },
+        {
+          "id": "w-call-reconcile",
+          "label": "Сверка (proposal)",
+          "position": {
+            "x": 1120,
+            "y": 280
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Сверка"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Сверка",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Сверка"
+            },
+            {
+              "name": "claimDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "left",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "right",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "branch",
+            "claimDecision",
+            "candidate",
+            "reviewItem"
+          ]
+        },
+        {
+          "id": "w-call-commit",
+          "label": "Фиксация (proposal)",
+          "position": {
+            "x": 1400,
+            "y": 280
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Фиксация"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Фиксация",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Фиксация"
+            },
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "decision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "branch",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "ontologyDecision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "currentSchemaVersion",
+              "type": "number",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "claim",
+            "claimId",
+            "status",
+            "statusUpdates",
+            "reused",
+            "schemaVersion",
+            "ontologyEntry"
+          ]
+        },
+        {
+          "id": "w-call-project",
+          "label": "Проекция (proposal)",
+          "position": {
+            "x": 1680,
+            "y": 280
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Проекция"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Проекция",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Проекция"
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "predicate",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "claims",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "asOf",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "affectedIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "derived",
+            "projection",
+            "requested",
+            "projected",
+            "skipped",
+            "ok"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1680,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "answer",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "workspace",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "proposal",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "blocked",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "question",
+          "target": "w-call-workspace",
+          "targetHandle": "question"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-workspace",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "claims",
+          "target": "w-call-workspace",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "entities",
+          "target": "w-call-workspace",
+          "targetHandle": "entities"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "evidence",
+          "target": "w-call-workspace",
+          "targetHandle": "evidence"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "concepts",
+          "target": "w-call-workspace",
+          "targetHandle": "concepts"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "timeWindow",
+          "target": "w-call-workspace",
+          "targetHandle": "timeWindow"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "query",
+          "target": "w-call-workspace",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e9",
+          "source": "w-call-workspace",
+          "sourceHandle": "workspace",
+          "target": "w-loop",
+          "targetHandle": "items"
+        },
+        {
+          "id": "e10",
+          "source": "w-trigger",
+          "sourceHandle": "question",
+          "target": "w-turn",
+          "targetHandle": "userPrompt"
+        },
+        {
+          "id": "e11",
+          "source": "w-call-workspace",
+          "sourceHandle": "workspace",
+          "target": "w-turn",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "e12",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-find-claims",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e13",
+          "source": "w-trigger",
+          "sourceHandle": "claims",
+          "target": "w-find-claims",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e14",
+          "source": "w-turn",
+          "sourceHandle": "query",
+          "target": "w-find-claims",
+          "targetHandle": "query"
+        },
+        {
+          "id": "e15",
+          "source": "w-turn",
+          "sourceHandle": "answer",
+          "target": "w-synth",
+          "targetHandle": "message"
+        },
+        {
+          "id": "e16",
+          "source": "w-turn",
+          "sourceHandle": "observations",
+          "target": "w-synth",
+          "targetHandle": "observations"
+        },
+        {
+          "id": "e17",
+          "source": "w-synth",
+          "sourceHandle": "answer",
+          "target": "w-safe",
+          "targetHandle": "answer"
+        },
+        {
+          "id": "e18",
+          "source": "w-safe",
+          "sourceHandle": "answer",
+          "target": "w-output",
+          "targetHandle": "answer"
+        },
+        {
+          "id": "e19",
+          "source": "w-call-workspace",
+          "sourceHandle": "workspace",
+          "target": "w-output",
+          "targetHandle": "workspace"
+        },
+        {
+          "id": "e20",
+          "source": "w-propose-claim",
+          "sourceHandle": "proposal",
+          "target": "w-output",
+          "targetHandle": "proposal"
+        },
+        {
+          "id": "e21",
+          "source": "w-safe",
+          "sourceHandle": "blocked",
+          "target": "w-output",
+          "targetHandle": "blocked"
+        },
+        {
+          "id": "e22",
+          "source": "w-trigger",
+          "sourceHandle": "proposalCandidate",
+          "target": "w-call-reconcile",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e23",
+          "source": "w-trigger",
+          "sourceHandle": "proposalCandidate",
+          "target": "w-call-commit",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e24",
+          "source": "w-call-reconcile",
+          "sourceHandle": "claimDecision",
+          "target": "w-call-commit",
+          "targetHandle": "decision"
+        },
+        {
+          "id": "e25",
+          "source": "w-call-reconcile",
+          "sourceHandle": "branch",
+          "target": "w-call-commit",
+          "targetHandle": "branch"
+        },
+        {
+          "id": "e26",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-commit",
+          "targetHandle": "existing"
+        },
+        {
+          "id": "e27",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-commit",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e28",
+          "source": "w-trigger",
+          "sourceHandle": "assertedAt",
+          "target": "w-call-commit",
+          "targetHandle": "assertedAt"
+        },
+        {
+          "id": "e29",
+          "source": "w-trigger",
+          "sourceHandle": "subject",
+          "target": "w-call-project",
+          "targetHandle": "subject"
+        },
+        {
+          "id": "e30",
+          "source": "w-trigger",
+          "sourceHandle": "predicate",
+          "target": "w-call-project",
+          "targetHandle": "predicate"
+        },
+        {
+          "id": "e31",
+          "source": "w-trigger",
+          "sourceHandle": "existingClaims",
+          "target": "w-call-project",
+          "targetHandle": "claims"
+        },
+        {
+          "id": "e32",
+          "source": "w-trigger",
+          "sourceHandle": "asOf",
+          "target": "w-call-project",
+          "targetHandle": "asOf"
+        },
+        {
+          "id": "e33",
+          "source": "w-trigger",
+          "sourceHandle": "affectedIds",
+          "target": "w-call-project",
+          "targetHandle": "affectedIds"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Знание: перенос",
+        "description": "Ручной перенос RagEntity/RAG_REL → claim.commit (accepted). Повтор узнаёт перенесённые id. Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "candidate",
+            "existing",
+            "source",
+            "assertedAt",
+            "collectionId",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-decision",
+          "label": "Accepted decision",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.control.constant",
+            "label": "Constant"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "textarea",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "{\"kind\":\"new\"}",
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-commit",
+          "label": "Claim commit",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.rag.claim.commit",
+            "label": "RAG: зафиксировать claim"
+          },
+          "config": [
+            {
+              "name": "candidate",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "decision",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "existing",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "assertedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "claim",
+            "statusUpdates",
+            "reused"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "claim",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "statusUpdates",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "reused",
+              "type": "boolean",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "candidate",
+          "target": "w-commit",
+          "targetHandle": "candidate"
+        },
+        {
+          "id": "e2",
+          "source": "w-decision",
+          "sourceHandle": "value",
+          "target": "w-commit",
+          "targetHandle": "decision"
+        },
+        {
+          "id": "e3",
+          "source": "w-trigger",
+          "sourceHandle": "existing",
+          "target": "w-commit",
+          "targetHandle": "existing"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-commit",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "assertedAt",
+          "target": "w-commit",
+          "targetHandle": "assertedAt"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-commit",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e7",
+          "source": "w-commit",
+          "sourceHandle": "claim",
+          "target": "w-output",
+          "targetHandle": "claim"
+        },
+        {
+          "id": "e8",
+          "source": "w-commit",
+          "sourceHandle": "statusUpdates",
+          "target": "w-output",
+          "targetHandle": "statusUpdates"
+        },
+        {
+          "id": "e9",
+          "source": "w-commit",
+          "sourceHandle": "reused",
+          "target": "w-output",
+          "targetHandle": "reused"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Разбор PDF",
+        "description": "Вход: pdfUrl (+ опционально готовый documentText от клиента). GET URL → текст → контракт для «Знание: документ». Бинарный PDF без серверного экстрактора — blocker (см. BINDING). Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "pdfUrl",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "pdfUrl",
+            "docId",
+            "collectionId",
+            "observedAt",
+            "source",
+            "documentText",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-http",
+          "label": "GET PDF URL",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "data.http.call",
+            "label": "HTTP Call"
+          },
+          "config": [
+            {
+              "name": "url",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "method",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "GET"
+            }
+          ],
+          "outputs": [
+            "response",
+            "status",
+            "statusCode"
+          ]
+        },
+        {
+          "id": "w-text-fb",
+          "label": "Text",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.string.fallback",
+            "label": "String: fallback"
+          },
+          "config": [
+            {
+              "name": "primary",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "fallback",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-call-doc",
+          "label": "Знание: документ",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Знание: документ"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Знание: документ",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Знание: документ"
+            },
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "evidenceId",
+            "committedClaimIds",
+            "conflictIds",
+            "schemaVersion",
+            "claimId",
+            "branch",
+            "derived"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "committedClaimIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conflictIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "pdfUrl",
+          "target": "w-http",
+          "targetHandle": "url"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "documentText",
+          "target": "w-text-fb",
+          "targetHandle": "primary"
+        },
+        {
+          "id": "e3",
+          "source": "w-http",
+          "sourceHandle": "response",
+          "target": "w-text-fb",
+          "targetHandle": "fallback"
+        },
+        {
+          "id": "e4",
+          "source": "w-text-fb",
+          "sourceHandle": "string",
+          "target": "w-output",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-output",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-output",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-output",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-output",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e9",
+          "source": "w-text-fb",
+          "sourceHandle": "string",
+          "target": "w-call-doc",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e10",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-call-doc",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-doc",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e12",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-call-doc",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e13",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-doc",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e14",
+          "source": "w-call-doc",
+          "sourceHandle": "evidenceId",
+          "target": "w-output",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e15",
+          "source": "w-call-doc",
+          "sourceHandle": "committedClaimIds",
+          "target": "w-output",
+          "targetHandle": "committedClaimIds"
+        },
+        {
+          "id": "e16",
+          "source": "w-call-doc",
+          "sourceHandle": "conflictIds",
+          "target": "w-output",
+          "targetHandle": "conflictIds"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Разбор DOC",
+        "description": "path (.docx) → office.docx.extractText; иначе documentText; иначе GET docUrl. Контракт для «Знание: документ». Legacy .doc без mammoth — blocker. Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "docUrl",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "path",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "docUrl",
+            "path",
+            "docId",
+            "collectionId",
+            "observedAt",
+            "source",
+            "documentText",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-docx",
+          "label": "DOCX extract",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.office.docx.extractText",
+            "label": "Office: docx extract text"
+          },
+          "config": [
+            {
+              "name": "path",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "basePath",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": ""
+            }
+          ],
+          "outputs": [
+            "text"
+          ]
+        },
+        {
+          "id": "w-http",
+          "label": "GET DOC URL",
+          "position": {
+            "x": 280,
+            "y": 200
+          },
+          "source": {
+            "nodeType": "data.http.call",
+            "label": "HTTP Call"
+          },
+          "config": [
+            {
+              "name": "url",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "method",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "GET"
+            }
+          ],
+          "outputs": [
+            "response",
+            "status",
+            "statusCode"
+          ]
+        },
+        {
+          "id": "w-text-fb",
+          "label": "Text",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.string.fallback",
+            "label": "String: fallback"
+          },
+          "config": [
+            {
+              "name": "primary",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "fallback",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-text-fb2",
+          "label": "Text 2",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.string.fallback",
+            "label": "String: fallback"
+          },
+          "config": [
+            {
+              "name": "primary",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "fallback",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-call-doc",
+          "label": "Знание: документ",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Знание: документ"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Знание: документ",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Знание: документ"
+            },
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "evidenceId",
+            "committedClaimIds",
+            "conflictIds",
+            "schemaVersion",
+            "claimId",
+            "branch",
+            "derived"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1400,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "committedClaimIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conflictIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "path",
+          "target": "w-docx",
+          "targetHandle": "path"
+        },
+        {
+          "id": "e2",
+          "source": "w-trigger",
+          "sourceHandle": "docUrl",
+          "target": "w-http",
+          "targetHandle": "url"
+        },
+        {
+          "id": "e3",
+          "source": "w-docx",
+          "sourceHandle": "text",
+          "target": "w-text-fb",
+          "targetHandle": "primary"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "documentText",
+          "target": "w-text-fb",
+          "targetHandle": "fallback"
+        },
+        {
+          "id": "e5",
+          "source": "w-text-fb",
+          "sourceHandle": "string",
+          "target": "w-text-fb2",
+          "targetHandle": "primary"
+        },
+        {
+          "id": "e6",
+          "source": "w-http",
+          "sourceHandle": "response",
+          "target": "w-text-fb2",
+          "targetHandle": "fallback"
+        },
+        {
+          "id": "e7",
+          "source": "w-text-fb2",
+          "sourceHandle": "string",
+          "target": "w-output",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-output",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-output",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e10",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-output",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-output",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e12",
+          "source": "w-text-fb2",
+          "sourceHandle": "string",
+          "target": "w-call-doc",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e13",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-call-doc",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e14",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-doc",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e15",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-call-doc",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e16",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-doc",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e17",
+          "source": "w-call-doc",
+          "sourceHandle": "evidenceId",
+          "target": "w-output",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e18",
+          "source": "w-call-doc",
+          "sourceHandle": "committedClaimIds",
+          "target": "w-output",
+          "targetHandle": "committedClaimIds"
+        },
+        {
+          "id": "e19",
+          "source": "w-call-doc",
+          "sourceHandle": "conflictIds",
+          "target": "w-output",
+          "targetHandle": "conflictIds"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Разбор Excel",
+        "description": "Загрузка .xlsx: office.xlsx.read → JSON-текст → контракт для «Знание: документ». Webhook.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "path",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "path",
+            "docId",
+            "collectionId",
+            "observedAt",
+            "source",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-xlsx",
+          "label": "XLSX read",
+          "position": {
+            "x": 280,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.office.xlsx.read",
+            "label": "Office: xlsx read"
+          },
+          "config": [
+            {
+              "name": "path",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "sheetName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": ""
+            },
+            {
+              "name": "basePath",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": ""
+            }
+          ],
+          "outputs": [
+            "rows",
+            "sheetNames"
+          ]
+        },
+        {
+          "id": "w-json",
+          "label": "Rows JSON",
+          "position": {
+            "x": 560,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.json.stringify",
+            "label": "JSON: stringify"
+          },
+          "config": [
+            {
+              "name": "source",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-call-doc",
+          "label": "Знание: документ",
+          "position": {
+            "x": 840,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Знание: документ"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Знание: документ",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Знание: документ"
+            },
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "evidenceId",
+            "committedClaimIds",
+            "conflictIds",
+            "schemaVersion",
+            "claimId",
+            "branch",
+            "derived"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "evidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "committedClaimIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conflictIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "path",
+          "target": "w-xlsx",
+          "targetHandle": "path"
+        },
+        {
+          "id": "e2",
+          "source": "w-xlsx",
+          "sourceHandle": "rows",
+          "target": "w-json",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e3",
+          "source": "w-json",
+          "sourceHandle": "string",
+          "target": "w-output",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e4",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-output",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e5",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-output",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e6",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-output",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e7",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-output",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e8",
+          "source": "w-json",
+          "sourceHandle": "string",
+          "target": "w-call-doc",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-call-doc",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e10",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-doc",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-call-doc",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e12",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-doc",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e13",
+          "source": "w-call-doc",
+          "sourceHandle": "evidenceId",
+          "target": "w-output",
+          "targetHandle": "evidenceId"
+        },
+        {
+          "id": "e14",
+          "source": "w-call-doc",
+          "sourceHandle": "committedClaimIds",
+          "target": "w-output",
+          "targetHandle": "committedClaimIds"
+        },
+        {
+          "id": "e15",
+          "source": "w-call-doc",
+          "sourceHandle": "conflictIds",
+          "target": "w-output",
+          "targetHandle": "conflictIds"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Приём arXiv",
+        "description": "Прямой GET abs HTML (без arXiv API) → abstract xpath → «Знание: документ». Отдельный PDF — процесс «Разбор PDF». Webhook. __BIND__ после импорта.",
+        "triggers": [
+          {
+            "type": "webhook"
+          },
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": true
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Trigger",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "htmlUrl",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "htmlUrl",
+            "docId",
+            "collectionId",
+            "observedAt",
+            "source",
+            "trigger"
+          ]
+        },
+        {
+          "id": "w-html",
+          "label": "HTML body",
+          "position": {
+            "x": 280,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.http.html.extractXpath",
+            "label": "HTTP HTML: XPath"
+          },
+          "config": [
+            {
+              "name": "url",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "xpath",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "//*[@id='abs']//blockquote[contains(@class,'abstract')]"
+            },
+            {
+              "name": "extractMode",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "text"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-join",
+          "label": "Join HTML text",
+          "position": {
+            "x": 560,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.string.join",
+            "label": "String: объединить"
+          },
+          "config": [
+            {
+              "name": "items",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "separator",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "\n"
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-call-html-doc",
+          "label": "Знание: документ (HTML)",
+          "position": {
+            "x": 840,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.process.call",
+            "label": "Вызов: Знание: документ"
+          },
+          "config": [
+            {
+              "name": "diagramId",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "__BIND__:Знание: документ",
+              "isPrimary": true
+            },
+            {
+              "name": "diagramName",
+              "type": "string",
+              "isPort": false,
+              "canBePort": false,
+              "static": true,
+              "defaultValue": "Знание: документ"
+            },
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isRequired": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "evidenceId",
+            "committedClaimIds",
+            "conflictIds",
+            "schemaVersion",
+            "claimId",
+            "branch",
+            "derived"
+          ]
+        },
+        {
+          "id": "w-output",
+          "label": "Output",
+          "position": {
+            "x": 1120,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Результат процесса"
+          },
+          "config": [
+            {
+              "name": "documentText",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "docId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "collectionId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "observedAt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "htmlEvidenceId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "committedClaimIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "conflictIds",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "sourceHandle": "htmlUrl",
+          "target": "w-html",
+          "targetHandle": "url"
+        },
+        {
+          "id": "e3",
+          "source": "w-html",
+          "sourceHandle": "value",
+          "target": "w-join",
+          "targetHandle": "items"
+        },
+        {
+          "id": "e7",
+          "source": "w-join",
+          "sourceHandle": "string",
+          "target": "w-call-html-doc",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e8",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-call-html-doc",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e9",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-call-html-doc",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e10",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-call-html-doc",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e11",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-call-html-doc",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e17",
+          "source": "w-join",
+          "sourceHandle": "string",
+          "target": "w-output",
+          "targetHandle": "documentText"
+        },
+        {
+          "id": "e18",
+          "source": "w-trigger",
+          "sourceHandle": "docId",
+          "target": "w-output",
+          "targetHandle": "docId"
+        },
+        {
+          "id": "e19",
+          "source": "w-trigger",
+          "sourceHandle": "collectionId",
+          "target": "w-output",
+          "targetHandle": "collectionId"
+        },
+        {
+          "id": "e20",
+          "source": "w-trigger",
+          "sourceHandle": "observedAt",
+          "target": "w-output",
+          "targetHandle": "observedAt"
+        },
+        {
+          "id": "e21",
+          "source": "w-trigger",
+          "sourceHandle": "source",
+          "target": "w-output",
+          "targetHandle": "source"
+        },
+        {
+          "id": "e22",
+          "source": "w-call-html-doc",
+          "sourceHandle": "evidenceId",
+          "target": "w-output",
+          "targetHandle": "htmlEvidenceId"
+        }
+      ]
+    }
+  ]
+}

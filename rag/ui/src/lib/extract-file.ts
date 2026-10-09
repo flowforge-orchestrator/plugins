@@ -67,6 +67,28 @@ async function extractDocx(file: File): Promise<string> {
     .trim();
 }
 
+/** Client-side .xlsx → TSV-ish text (validate form; no server path). */
+async function extractXlsx(file: File): Promise<string> {
+  const XLSX = await import(
+    /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm'
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lib = XLSX as any;
+  const wb = lib.read(await file.arrayBuffer(), { type: 'array' });
+  const sheets: string[] = wb.SheetNames ?? [];
+  if (!sheets.length) throw new Error('XLSX без листов');
+  const parts: string[] = [];
+  for (const name of sheets) {
+    const sheet = wb.Sheets[name];
+    if (!sheet) continue;
+    const csv = lib.utils.sheet_to_csv(sheet, { FS: '\t' }) as string;
+    if (!csv.trim()) continue;
+    parts.push(`# ${name}\n\n${csv.trim()}`);
+  }
+  if (!parts.length) throw new Error('XLSX без текстовых ячеек');
+  return parts.join('\n\n---\n\n');
+}
+
 async function extractZip(
   file: File,
   onPart?: (name: string) => void,
@@ -87,7 +109,7 @@ async function extractZip(
       type: 'application/octet-stream',
     });
     try {
-      const text = await extractOne(fake);
+      const { text } = await extractFileToText(fake);
       if (text.trim().length < 40) continue;
       onPart?.(base);
       names.push(base);
@@ -141,6 +163,16 @@ export async function extractFileToText(
   if (ext === 'doc') {
     throw new Error('Формат .doc не поддерживается — сохраните как .docx или PDF');
   }
+  if (
+    ext === 'xlsx' ||
+    mime ===
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ) {
+    return { text: await extractXlsx(file), label: file.name };
+  }
+  if (ext === 'xls') {
+    throw new Error('Формат .xls не поддерживается — сохраните как .xlsx');
+  }
   if (ext === 'zip' || mime === 'application/zip' || mime === 'application/x-zip-compressed') {
     const { text, parts } = await extractZip(file);
     return { text, label: file.name, members: parts };
@@ -156,3 +188,7 @@ export async function extractFileToText(
 
 export const ACCEPT_ATTR =
   '.txt,.md,.markdown,.pdf,.doc,.docx,.rtf,.zip,.png,.jpg,.jpeg,.webp,.gif,text/plain,application/pdf,application/zip,image/*';
+
+/** Validate workplace: doc/docx/xlsx only (PDF/DOC URL intakes are separate). */
+export const VALIDATE_FILE_ACCEPT =
+  '.doc,.docx,.xlsx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';

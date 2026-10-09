@@ -21,15 +21,33 @@ export type ChunkSpan = {
   end: number;
 };
 
+/** Indexed hierarchy: doc → section → paragraph → ~400-char leaf. */
+export type ChunkLevel = 'doc' | 'section' | 'paragraph' | 'chunk';
+
 export type RagChunk = {
   chunkId: string;
   docId: string;
   text: string;
   contentHash: string;
   headingPath: string[];
+  /** Parent unit in the hierarchy (section/paragraph/doc chunkId). */
   parentId?: string;
+  /** Default `chunk` (leaf). Non-leaves are graph nodes; only leaves are embedded. */
+  level?: ChunkLevel;
   span?: ChunkSpan;
   tokenEstimate: number;
+};
+
+export type HitEntityRef = {
+  entityId: string;
+  label: string;
+  typeId: string;
+};
+
+export type HitRelationRef = {
+  typeId: string;
+  fromLabel: string;
+  toLabel: string;
 };
 
 export type EntityTypeDecl = {
@@ -78,6 +96,8 @@ export type CanonicalEntity = {
   entityId: string;
   typeId: string;
   label: string;
+  /** Surface forms that resolve to this node (падежи / синонимы). */
+  aliases?: string[];
   identityValues?: Record<string, string>;
   mentionIds: string[];
 };
@@ -90,6 +110,8 @@ export type EntityRelation = {
   chunkId: string;
   docId: string;
   evidence?: string;
+  /** Raw predicate from SPO extraction before synonym → typeId. */
+  predicateSurface?: string;
 };
 
 export type SearchHit = {
@@ -99,7 +121,21 @@ export type SearchHit = {
   score: number;
   headingPath?: string[];
   source?: 'dense' | 'sparse' | 'graph' | 'hybrid' | 'rerank';
+  level?: ChunkLevel;
+  /** Entities discussed in this chunk (from graph / mentions). */
+  entities?: HitEntityRef[];
+  /** Relations evidenced on this chunk. */
+  relations?: HitRelationRef[];
+  /** Subset of entities overlapping the question intent. */
+  intentEntities?: HitEntityRef[];
+  /** Count of intent entity overlaps (ranking hint). */
+  intentOverlap?: number;
 };
+
+/** True when the unit should be embedded in the vector index. */
+export function isLeafChunk(chunk: Pick<RagChunk, 'level'>): boolean {
+  return chunk.level == null || chunk.level === 'chunk';
+}
 
 export type Citation = {
   chunkId: string;
