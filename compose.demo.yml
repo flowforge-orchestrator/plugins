@@ -95,6 +95,9 @@ services:
       PORT: ${DEMO_TELEGRAM_EXECUTOR_PORT:-9400}
       PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_MAX_ATTEMPTS:-30}
       PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS: ${PLUGIN_MANAGER_MANIFEST_ON_INIT_RETRY_BASE_MS:-2000}
+      TELEGRAM_HISTORY_PATH: /data/history.sqlite
+    volumes:
+      - telegram_history:/data
 
   llm:
     build:
@@ -149,3 +152,4 @@ volumes:
   demo_files:
   demo_workspace:
   demo_vault:
+  telegram_history:

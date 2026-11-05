@@ -40,6 +40,9 @@ services:
       PLUGIN_TCP_PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
       EXECUTOR_TCP_PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
       PORT: ${TELEGRAM_EXECUTOR_TCP_PORT:-9400}
+      TELEGRAM_HISTORY_PATH: /data/history.sqlite
+    volumes:
+      - telegram_history:/data
 
   jira:
     build:
@@ -170,6 +173,9 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+
+volumes:
+  telegram_history:
 
 # Full RAG stack with stores: use compose.rag.yml (preferred for local demo).
 

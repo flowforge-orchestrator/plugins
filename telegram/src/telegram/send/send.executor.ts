@@ -3,9 +3,9 @@ import {
   ExecContext,
   Executor,
   FieldDecorator,
-  loadHelpFromFile,
 } from '@kosolapus/plugin-ts-sdk';
 import { publicationPullEndpointFromEnv } from '../../getUrlFromEnv';
+import help from './help.md';
 
 const RESPONSE_BODY_SNIPPET_MAX_CHARS = 500;
 
@@ -17,6 +17,8 @@ class InputDto {
     label: 'Bot Token',
     description: 'Токен бота от BotFather',
     static: true,
+    required: true,
+    secretKind: 'TELEGRAM_BOT_TOKEN',
   })
   botToken!: string;
 
@@ -28,6 +30,8 @@ class InputDto {
     description: 'ID чата или канала (например: @channel или -1001234567890)',
     isPrimary: true,
     canBePort: true,
+    isPort: true,
+    required: true,
   })
   chatId!: string;
 
@@ -39,6 +43,7 @@ class InputDto {
     description: 'Сообщение для отправки',
     canBePort: true,
     isPort: true,
+    required: true,
   })
   text!: string;
 
@@ -49,7 +54,7 @@ class InputDto {
     label: 'Parse Mode',
     description: 'HTML или Markdown (опционально)',
     canBePort: true,
-    isPort: true,
+    isPort: false,
   })
   parseMode?: 'HTML' | 'Markdown' | 'MarkdownV2';
 }
@@ -85,7 +90,7 @@ type SendOnceResult = SendOnceSuccess | SendOnceFailure;
   name: 'Telegram: отправить сообщение',
   description:
     'Отправляет сообщение в чат или канал через Bot API. botToken — ref, chatId и text — из портов или конфига.',
-  help: loadHelpFromFile(__dirname),
+  help,
   pluginId: 'telegram',
   inputs: InputDto,
   outputs: OutputDto,

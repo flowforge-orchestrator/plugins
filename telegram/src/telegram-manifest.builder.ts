@@ -17,10 +17,10 @@ export class TelegramPluginManifestBuilder implements PluginManifestOnInitBuilde
       kind: 'plugin_manifest_request_v2',
       pluginId: 'telegram',
       publicationVersion:
-        process.env.PLUGIN_PUBLICATION_VERSION?.trim() ?? '0.0.2',
+        process.env.PLUGIN_PUBLICATION_VERSION?.trim() ?? '0.0.5',
       label: 'Telegram',
       description:
-        'Отправка сообщений через Bot API; batch pull executor list на TCP с executor ingress.',
+        'Bot API и локальная история переписки (SQLite): запись, список с фильтрами и offset, одна запись, список чатов.',
       variables: [],
       staticAssets: [],
       executors: entries.map((e) => ({ nodeType: e.nodeType })),

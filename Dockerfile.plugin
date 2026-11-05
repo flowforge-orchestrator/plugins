@@ -30,5 +30,7 @@ RUN if [ -d /tmp/plugin-dist/bundled ]; then cp -r /tmp/plugin-dist/bundled ./bu
     if [ -d /tmp/plugin-dist/ui ]; then cp -r /tmp/plugin-dist/ui ./ui; fi && \
     rm -rf /tmp/plugin-dist
 
+RUN mkdir -p /data && chown node:node /data
+
 USER node
 CMD ["node", "run.cjs"]

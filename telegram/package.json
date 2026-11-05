@@ -7,7 +7,7 @@
   "files": ["dist/run.cjs", "dist/help.md", "package.json"],
   "conveyorPluginBuild": {
     "helpMarkdown": { "distRelativePath": "telegram/send/help.md" },
-    "bundleMarkdownAsText": false
+    "bundleMarkdownAsText": true
   },
   "publishConfig": {
     "access": "public"
@@ -18,7 +18,8 @@
     "prune:dist": "node ../node_modules/@conveyor/plugin-build-tools/scripts/prune-dist.mjs",
     "build": "tsc -p tsconfig.json && npm run copy:help && npm run bundle && npm run prune:dist",
     "start": "node dist/run.cjs",
-    "start:dev": "nodemon"
+    "start:dev": "nodemon",
+    "test": "node --import tsx --test src/telegram/history/history.logic.spec.ts"
   },
   "dependencies": {
     "@kosolapus/plugin-ts-sdk": "0.0.10",
@@ -35,6 +36,7 @@
     "@conveyor/plugin-build-tools": "0.0.1",
     "@types/node": "^22.10.0",
     "nodemon": "^3.1.9",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.0"
   },
   "engines": {
