@@ -7,7 +7,8 @@
 #
 # docker-compose services use build.context: .
 
-FROM node:24-alpine AS build
+ARG NODE_IMAGE=node:24.22.2-alpine@sha256:a34ab6d7f6f4813f4d0c5469d74685604b962fbdbf5793a7bc7b4998ecb867c8
+FROM ${NODE_IMAGE} AS build
 ARG PLUGIN_DIR
 WORKDIR /src
 
@@ -16,7 +17,7 @@ COPY . /src
 RUN npm ci
 RUN npm run build -w @conveyor/plugin-${PLUGIN_DIR}
 
-FROM node:24-alpine
+FROM ${NODE_IMAGE}
 ARG PLUGIN_DIR
 WORKDIR /app
 ENV NODE_ENV=production
