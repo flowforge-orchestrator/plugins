@@ -53,4 +53,7 @@ npm run build -w @conveyor/plugin-telegram
 
 **Тесты:** `npm test -w @conveyor/plugin-telegram`
 
-**Пресет:** [`presets/telegram-incoming.json`](presets/telegram-incoming.json) — вебхук входящего апдейта: разбор `message`, правки и поста канала, запись в историю, ответ в тот же чат.
+**Пресеты:**
+
+- [`presets/telegram-incoming.json`](presets/telegram-incoming.json) — вебхук входящего апдейта: разбор `message`, правки и поста канала, запись в историю, ответ в тот же чат.
+- [`presets/telegram-article.json`](presets/telegram-article.json) — три процесса: контент-план, создание статьи, публикация в канал.

@@ -3,6 +3,10 @@
     {
       "id": "telegram-incoming",
       "file": "telegram-incoming.json"
+    },
+    {
+      "id": "telegram-article",
+      "file": "telegram-article.json"
     }
   ]
 }

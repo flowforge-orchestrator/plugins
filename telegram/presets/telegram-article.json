@@ -1,0 +1,282 @@
+{
+  "id": "telegram-article",
+  "version": 1,
+  "pluginId": "telegram",
+  "metadata": {
+    "name": "Telegram: контент в канал",
+    "description": "Набор из трёх процессов: контент-план, создание статьи, публикация в канал."
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "Контент-план",
+        "description": "Генерация плана публикаций на неделю",
+        "triggers": [
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": false
+      },
+      "widgets": [
+        {
+          "id": "w-in-1",
+          "label": "Тема",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "user.input",
+            "label": "User Input"
+          },
+          "config": [
+            {
+              "name": "prompt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-llm-1",
+          "label": "LLM",
+          "position": {
+            "x": 220,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "llm.ollama.generate",
+            "label": "Ollama Generate"
+          },
+          "config": [
+            {
+              "name": "model",
+              "type": "string",
+              "defaultValue": "llama3.2",
+              "isPort": false,
+              "canBePort": true
+            },
+            {
+              "name": "prompt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "text"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-in-1",
+          "target": "w-llm-1",
+          "sourceHandle": "value",
+          "targetHandle": "prompt"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Создание статьи",
+        "description": "Генерация текста статьи по теме",
+        "triggers": [
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": false
+      },
+      "widgets": [
+        {
+          "id": "w-input-2",
+          "label": "Тема",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "user.input",
+            "label": "User Input"
+          },
+          "config": [
+            {
+              "name": "prompt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-llm-2",
+          "label": "LLM",
+          "position": {
+            "x": 220,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "llm.ollama.generate",
+            "label": "Ollama Generate"
+          },
+          "config": [
+            {
+              "name": "model",
+              "type": "string",
+              "defaultValue": "llama3.2",
+              "isPort": false,
+              "canBePort": true
+            },
+            {
+              "name": "prompt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": [
+            "text"
+          ]
+        },
+        {
+          "id": "w-validation-2",
+          "label": "Confirm",
+          "position": {
+            "x": 440,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "user.validation",
+            "label": "User Validation"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "confirm"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-input-2",
+          "target": "w-llm-2",
+          "sourceHandle": "value",
+          "targetHandle": "prompt"
+        },
+        {
+          "id": "e2",
+          "source": "w-llm-2",
+          "target": "w-validation-2",
+          "sourceHandle": "text",
+          "targetHandle": "message"
+        }
+      ]
+    },
+    {
+      "settings": {
+        "name": "Публикация в канал",
+        "description": "Отправка подготовленного текста в Telegram",
+        "triggers": [
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": false
+      },
+      "widgets": [
+        {
+          "id": "w-in-3",
+          "label": "Текст",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "user.input",
+            "label": "User Input"
+          },
+          "config": [
+            {
+              "name": "prompt",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true,
+              "isRequired": true
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-tg-3",
+          "label": "Telegram",
+          "position": {
+            "x": 220,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "plugin.telegram.send",
+            "label": "Telegram: отправить"
+          },
+          "config": [
+            {
+              "name": "token",
+              "type": "ref",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "chatId",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "result"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-in-3",
+          "target": "w-tg-3",
+          "sourceHandle": "value",
+          "targetHandle": "text"
+        }
+      ]
+    }
+  ]
+}
