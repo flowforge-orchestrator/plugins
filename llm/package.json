@@ -18,7 +18,8 @@
     "prune:dist": "node ../node_modules/@conveyor/plugin-build-tools/scripts/prune-dist.mjs",
     "build": "tsc -p tsconfig.json && npm run copy:help && npm run bundle && npm run prune:dist",
     "start": "node dist/run.cjs",
-    "start:dev": "nodemon"
+    "start:dev": "nodemon",
+    "test": "node --import tsx --test src/llm-manifest.builder.spec.ts"
   },
   "dependencies": {
     "@kosolapus/plugin-ts-sdk": "0.0.10",
