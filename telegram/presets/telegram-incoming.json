@@ -1,0 +1,1062 @@
+{
+  "id": "telegram-incoming",
+  "version": 1,
+  "pluginId": "telegram",
+  "metadata": {
+    "name": "Telegram: входящий апдейт",
+    "description": "Вебхук: message, правка и пост канала разбираются на поля, пишутся в историю отдельной записью и отвечают в тот же чат. Токен бота задаётся на узле «Отправить»."
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "Telegram: входящий апдейт",
+        "description": "Вебхук Telegram: message, edited_message, channel_post и edited_channel_post разбираются, пишутся в историю и отвечают в тот же чат. Правка — отдельная запись.",
+        "triggers": [
+          {
+            "type": "manual"
+          },
+          {
+            "type": "webhook"
+          }
+        ],
+        "isActive": false
+      },
+      "widgets": [
+        {
+          "id": "w-update",
+          "label": "Апдейт",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Входные данные триггера"
+          },
+          "config": [
+            {
+              "name": "update_id",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "edited_message",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "channel_post",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "edited_channel_post",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "trigger",
+            "update_id",
+            "message",
+            "edited_message",
+            "channel_post",
+            "edited_channel_post"
+          ]
+        },
+        {
+          "id": "w-body-1",
+          "label": "Тело: message или правка",
+          "position": {
+            "x": 280,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.boolean.if",
+            "label": "Boolean: if"
+          },
+          "config": [
+            {
+              "name": "condition",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "then",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "else",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-body-2",
+          "label": "Тело: или пост",
+          "position": {
+            "x": 560,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.boolean.if",
+            "label": "Boolean: if"
+          },
+          "config": [
+            {
+              "name": "condition",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "then",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "else",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-body",
+          "label": "Тело сообщения",
+          "position": {
+            "x": 840,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.boolean.if",
+            "label": "Boolean: if"
+          },
+          "config": [
+            {
+              "name": "condition",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "then",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "else",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-kind-message",
+          "label": "Тип: message",
+          "position": {
+            "x": 280,
+            "y": 160
+          },
+          "source": {
+            "nodeType": "system.control.constant",
+            "label": "Constant"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": false,
+              "defaultValue": "message"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-kind-edit",
+          "label": "Тип: правка",
+          "position": {
+            "x": 280,
+            "y": 280
+          },
+          "source": {
+            "nodeType": "system.control.constant",
+            "label": "Constant"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": false,
+              "defaultValue": "edited_message"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-kind-channel",
+          "label": "Тип: пост",
+          "position": {
+            "x": 560,
+            "y": 280
+          },
+          "source": {
+            "nodeType": "system.control.constant",
+            "label": "Constant"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": false,
+              "defaultValue": "channel_post"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-kind-channel-edit",
+          "label": "Тип: правка поста",
+          "position": {
+            "x": 840,
+            "y": 280
+          },
+          "source": {
+            "nodeType": "system.control.constant",
+            "label": "Constant"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": false,
+              "defaultValue": "edited_channel_post"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-kind-1",
+          "label": "Тип: message или правка",
+          "position": {
+            "x": 560,
+            "y": 160
+          },
+          "source": {
+            "nodeType": "system.boolean.if",
+            "label": "Boolean: if"
+          },
+          "config": [
+            {
+              "name": "condition",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "then",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "else",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-kind-2",
+          "label": "Тип: или пост",
+          "position": {
+            "x": 840,
+            "y": 160
+          },
+          "source": {
+            "nodeType": "system.boolean.if",
+            "label": "Boolean: if"
+          },
+          "config": [
+            {
+              "name": "condition",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "then",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "else",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-kind",
+          "label": "Тип события",
+          "position": {
+            "x": 1120,
+            "y": 160
+          },
+          "source": {
+            "nodeType": "system.boolean.if",
+            "label": "Boolean: if"
+          },
+          "config": [
+            {
+              "name": "condition",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "then",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            },
+            {
+              "name": "else",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-meaning",
+          "label": "Смысл",
+          "position": {
+            "x": 1120,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "system.object.extract",
+            "label": "Извлечение полей из объекта по карте"
+          },
+          "config": [
+            {
+              "name": "source",
+              "type": "keyvalue",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "map",
+              "type": "keyvalue",
+              "isPort": false,
+              "defaultValue": {
+                "chatId": "$.chat.id",
+                "messageId": "$.message_id",
+                "text": [
+                  "$.text",
+                  "$.caption"
+                ],
+                "fromId": [
+                  "$.from.id",
+                  "$.sender_chat.id"
+                ],
+                "fromUsername": [
+                  "$.from.username",
+                  "$.author_signature"
+                ],
+                "fromFirstName": [
+                  "$.from.first_name",
+                  "$.sender_chat.title"
+                ],
+                "messageThreadId": "$.message_thread_id",
+                "replyToMessageId": "$.reply_to_message.message_id",
+                "replyToText": [
+                  "$.reply_to_message.text",
+                  "$.reply_to_message.caption"
+                ],
+                "chatType": "$.chat.type",
+                "chatTitle": [
+                  "$.chat.title",
+                  "$.chat.username",
+                  "$.chat.first_name",
+                  "$.sender_chat.title"
+                ],
+                "date": [
+                  "$.edit_date",
+                  "$.date"
+                ]
+              }
+            }
+          ],
+          "outputs": [
+            "chatId",
+            "messageId",
+            "text",
+            "fromId",
+            "fromUsername",
+            "fromFirstName",
+            "messageThreadId",
+            "replyToMessageId",
+            "replyToText",
+            "chatType",
+            "chatTitle",
+            "date"
+          ]
+        },
+        {
+          "id": "w-direction",
+          "label": "Направление",
+          "position": {
+            "x": 1120,
+            "y": 320
+          },
+          "source": {
+            "nodeType": "system.control.constant",
+            "label": "Constant"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": false,
+              "defaultValue": "in"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-history",
+          "label": "История",
+          "position": {
+            "x": 1460,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "plugin.telegram.history.append",
+            "label": "Telegram: записать историю"
+          },
+          "config": [
+            {
+              "name": "chatId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string",
+              "isRequired": true
+            },
+            {
+              "name": "direction",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string",
+              "isRequired": true
+            },
+            {
+              "name": "messageId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "updateId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "kind",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "text",
+              "isPort": true,
+              "canBePort": true,
+              "type": "textarea"
+            },
+            {
+              "name": "fromId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "fromUsername",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "fromFirstName",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "messageThreadId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "replyToMessageId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "replyToText",
+              "isPort": true,
+              "canBePort": true,
+              "type": "textarea"
+            },
+            {
+              "name": "chatType",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "chatTitle",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "date",
+              "isPort": true,
+              "canBePort": true,
+              "type": "number"
+            }
+          ],
+          "outputs": [
+            "id",
+            "chatId",
+            "messageId",
+            "created"
+          ]
+        },
+        {
+          "id": "w-vars",
+          "label": "Переменные ответа",
+          "position": {
+            "x": 1460,
+            "y": -160
+          },
+          "source": {
+            "nodeType": "system.object.from",
+            "label": "Object: from"
+          },
+          "config": [
+            {
+              "name": "key",
+              "type": "string",
+              "isPort": false,
+              "defaultValue": "text"
+            },
+            {
+              "name": "value",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "object"
+          ]
+        },
+        {
+          "id": "w-template",
+          "label": "Шаблон",
+          "position": {
+            "x": 1460,
+            "y": -300
+          },
+          "source": {
+            "nodeType": "system.control.constant",
+            "label": "Constant"
+          },
+          "config": [
+            {
+              "name": "value",
+              "type": "keyvalue",
+              "isPort": false,
+              "defaultValue": "Принял: {{text}}"
+            }
+          ],
+          "outputs": [
+            "value"
+          ]
+        },
+        {
+          "id": "w-reply",
+          "label": "Текст ответа",
+          "position": {
+            "x": 1760,
+            "y": -160
+          },
+          "source": {
+            "nodeType": "system.string.template",
+            "label": "String: template"
+          },
+          "config": [
+            {
+              "name": "template",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "vars",
+              "isPort": true,
+              "canBePort": true,
+              "type": "keyvalue"
+            }
+          ],
+          "outputs": [
+            "string"
+          ]
+        },
+        {
+          "id": "w-send",
+          "label": "Отправить",
+          "position": {
+            "x": 2060,
+            "y": -80
+          },
+          "source": {
+            "nodeType": "plugin.telegram.send",
+            "label": "Telegram: отправить сообщение"
+          },
+          "config": [
+            {
+              "name": "botToken",
+              "type": "ref",
+              "isPort": false,
+              "isRequired": true,
+              "secretKind": "TELEGRAM_BOT_TOKEN"
+            },
+            {
+              "name": "chatId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string",
+              "isRequired": true,
+              "isPrimary": true
+            },
+            {
+              "name": "text",
+              "isPort": true,
+              "canBePort": true,
+              "type": "textarea",
+              "isRequired": true
+            },
+            {
+              "name": "parseMode",
+              "type": "string",
+              "isPort": false,
+              "canBePort": true
+            }
+          ],
+          "outputs": [
+            "result",
+            "status"
+          ]
+        },
+        {
+          "id": "w-out",
+          "label": "Выход",
+          "position": {
+            "x": 2360,
+            "y": 40
+          },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Output"
+          },
+          "config": [
+            {
+              "name": "chatId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "text",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "historyId",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            },
+            {
+              "name": "status",
+              "isPort": true,
+              "canBePort": true,
+              "type": "string"
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "w-update-condition-w-body-1",
+          "source": "w-update",
+          "target": "w-body-1",
+          "sourceHandle": "message",
+          "targetHandle": "condition"
+        },
+        {
+          "id": "w-update-then-w-body-1",
+          "source": "w-update",
+          "target": "w-body-1",
+          "sourceHandle": "message",
+          "targetHandle": "then"
+        },
+        {
+          "id": "w-update-else-w-body-1",
+          "source": "w-update",
+          "target": "w-body-1",
+          "sourceHandle": "edited_message",
+          "targetHandle": "else"
+        },
+        {
+          "id": "w-body-1-condition-w-body-2",
+          "source": "w-body-1",
+          "target": "w-body-2",
+          "sourceHandle": "value",
+          "targetHandle": "condition"
+        },
+        {
+          "id": "w-body-1-then-w-body-2",
+          "source": "w-body-1",
+          "target": "w-body-2",
+          "sourceHandle": "value",
+          "targetHandle": "then"
+        },
+        {
+          "id": "w-update-else-w-body-2",
+          "source": "w-update",
+          "target": "w-body-2",
+          "sourceHandle": "channel_post",
+          "targetHandle": "else"
+        },
+        {
+          "id": "w-body-2-condition-w-body",
+          "source": "w-body-2",
+          "target": "w-body",
+          "sourceHandle": "value",
+          "targetHandle": "condition"
+        },
+        {
+          "id": "w-body-2-then-w-body",
+          "source": "w-body-2",
+          "target": "w-body",
+          "sourceHandle": "value",
+          "targetHandle": "then"
+        },
+        {
+          "id": "w-update-else-w-body",
+          "source": "w-update",
+          "target": "w-body",
+          "sourceHandle": "edited_channel_post",
+          "targetHandle": "else"
+        },
+        {
+          "id": "w-body-source-w-meaning",
+          "source": "w-body",
+          "target": "w-meaning",
+          "sourceHandle": "value",
+          "targetHandle": "source"
+        },
+        {
+          "id": "w-update-condition-w-kind-1",
+          "source": "w-update",
+          "target": "w-kind-1",
+          "sourceHandle": "message",
+          "targetHandle": "condition"
+        },
+        {
+          "id": "w-kind-message-then-w-kind-1",
+          "source": "w-kind-message",
+          "target": "w-kind-1",
+          "sourceHandle": "value",
+          "targetHandle": "then"
+        },
+        {
+          "id": "w-kind-edit-else-w-kind-1",
+          "source": "w-kind-edit",
+          "target": "w-kind-1",
+          "sourceHandle": "value",
+          "targetHandle": "else"
+        },
+        {
+          "id": "w-body-1-condition-w-kind-2",
+          "source": "w-body-1",
+          "target": "w-kind-2",
+          "sourceHandle": "value",
+          "targetHandle": "condition"
+        },
+        {
+          "id": "w-kind-1-then-w-kind-2",
+          "source": "w-kind-1",
+          "target": "w-kind-2",
+          "sourceHandle": "value",
+          "targetHandle": "then"
+        },
+        {
+          "id": "w-kind-channel-else-w-kind-2",
+          "source": "w-kind-channel",
+          "target": "w-kind-2",
+          "sourceHandle": "value",
+          "targetHandle": "else"
+        },
+        {
+          "id": "w-body-2-condition-w-kind",
+          "source": "w-body-2",
+          "target": "w-kind",
+          "sourceHandle": "value",
+          "targetHandle": "condition"
+        },
+        {
+          "id": "w-kind-2-then-w-kind",
+          "source": "w-kind-2",
+          "target": "w-kind",
+          "sourceHandle": "value",
+          "targetHandle": "then"
+        },
+        {
+          "id": "w-kind-channel-edit-else-w-kind",
+          "source": "w-kind-channel-edit",
+          "target": "w-kind",
+          "sourceHandle": "value",
+          "targetHandle": "else"
+        },
+        {
+          "id": "w-kind-kind-w-history",
+          "source": "w-kind",
+          "target": "w-history",
+          "sourceHandle": "value",
+          "targetHandle": "kind"
+        },
+        {
+          "id": "w-update-updateId-w-history",
+          "source": "w-update",
+          "target": "w-history",
+          "sourceHandle": "update_id",
+          "targetHandle": "updateId"
+        },
+        {
+          "id": "w-meaning-chatId-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "chatId",
+          "targetHandle": "chatId"
+        },
+        {
+          "id": "w-meaning-messageId-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "messageId",
+          "targetHandle": "messageId"
+        },
+        {
+          "id": "w-meaning-text-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "text",
+          "targetHandle": "text"
+        },
+        {
+          "id": "w-meaning-fromId-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "fromId",
+          "targetHandle": "fromId"
+        },
+        {
+          "id": "w-meaning-fromUsername-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "fromUsername",
+          "targetHandle": "fromUsername"
+        },
+        {
+          "id": "w-meaning-fromFirstName-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "fromFirstName",
+          "targetHandle": "fromFirstName"
+        },
+        {
+          "id": "w-meaning-messageThreadId-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "messageThreadId",
+          "targetHandle": "messageThreadId"
+        },
+        {
+          "id": "w-meaning-replyToMessageId-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "replyToMessageId",
+          "targetHandle": "replyToMessageId"
+        },
+        {
+          "id": "w-meaning-replyToText-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "replyToText",
+          "targetHandle": "replyToText"
+        },
+        {
+          "id": "w-meaning-chatType-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "chatType",
+          "targetHandle": "chatType"
+        },
+        {
+          "id": "w-meaning-chatTitle-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "chatTitle",
+          "targetHandle": "chatTitle"
+        },
+        {
+          "id": "w-meaning-date-w-history",
+          "source": "w-meaning",
+          "target": "w-history",
+          "sourceHandle": "date",
+          "targetHandle": "date"
+        },
+        {
+          "id": "w-direction-direction-w-history",
+          "source": "w-direction",
+          "target": "w-history",
+          "sourceHandle": "value",
+          "targetHandle": "direction"
+        },
+        {
+          "id": "w-meaning-value-w-vars",
+          "source": "w-meaning",
+          "target": "w-vars",
+          "sourceHandle": "text",
+          "targetHandle": "value"
+        },
+        {
+          "id": "w-vars-vars-w-reply",
+          "source": "w-vars",
+          "target": "w-reply",
+          "sourceHandle": "object",
+          "targetHandle": "vars"
+        },
+        {
+          "id": "w-template-template-w-reply",
+          "source": "w-template",
+          "target": "w-reply",
+          "sourceHandle": "value",
+          "targetHandle": "template"
+        },
+        {
+          "id": "w-reply-text-w-send",
+          "source": "w-reply",
+          "target": "w-send",
+          "sourceHandle": "string",
+          "targetHandle": "text"
+        },
+        {
+          "id": "w-meaning-chatId-w-send",
+          "source": "w-meaning",
+          "target": "w-send",
+          "sourceHandle": "chatId",
+          "targetHandle": "chatId"
+        },
+        {
+          "id": "w-meaning-chatId-w-out",
+          "source": "w-meaning",
+          "target": "w-out",
+          "sourceHandle": "chatId",
+          "targetHandle": "chatId"
+        },
+        {
+          "id": "w-reply-text-w-out",
+          "source": "w-reply",
+          "target": "w-out",
+          "sourceHandle": "string",
+          "targetHandle": "text"
+        },
+        {
+          "id": "w-history-historyId-w-out",
+          "source": "w-history",
+          "target": "w-out",
+          "sourceHandle": "id",
+          "targetHandle": "historyId"
+        },
+        {
+          "id": "w-send-status-w-out",
+          "source": "w-send",
+          "target": "w-out",
+          "sourceHandle": "status",
+          "targetHandle": "status"
+        }
+      ]
+    }
+  ]
+}
