@@ -1,0 +1,8 @@
+{
+  "id": "graph-kg",
+  "title": "Graph + vector knowledge pack",
+  "description": "Skills list + ToolProvider MCP tools for every CLI agent (ephemeral /tmp/pack; no host workspace mount).",
+  "tools": ["search", "graph"],
+  "skills": ["grounded-answer", "graph-kg", "vector-search"],
+  "note": "Tools are ToolInstance → ToolProvider → mcpAttach. Skills names are embedded at build and materialized under /tmp/pack at run."
+}

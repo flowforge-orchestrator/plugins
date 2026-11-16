@@ -1,0 +1,64 @@
+{
+  "collectionId": "chuk_i_gek",
+  "opensource": {
+    "provider": "ollama",
+    "model": "gemma4:12b-mlx",
+    "baseUrl": "http://host.docker.internal:11434/v1"
+  },
+  "workspace": "/var/lib/cli-agent/workspaces/graph-pack",
+  "agents": [
+    {
+      "slug": "hermes",
+      "title": "Graph pack: Hermes",
+      "toolName": "cli_agent_graph_hermes",
+      "lane": "opensource"
+    },
+    {
+      "slug": "aider",
+      "title": "Graph pack: Aider",
+      "toolName": "cli_agent_graph_aider",
+      "lane": "opensource",
+      "provider": "custom",
+      "model": "openai/gemma4:12b-mlx",
+      "skip": "hangs on litellm/ollama after banner"
+    },
+    {
+      "slug": "opencode",
+      "title": "Graph pack: OpenCode",
+      "toolName": "cli_agent_graph_opencode",
+      "lane": "opensource"
+    },
+    {
+      "slug": "claude-code",
+      "title": "Graph pack: Claude Code",
+      "toolName": "cli_agent_graph_claude_code",
+      "lane": "proprietary",
+      "provider": "anthropic",
+      "modelEnv": "SMOKE_MODEL_CLAUDE_CODE"
+    },
+    {
+      "slug": "codex",
+      "title": "Graph pack: Codex",
+      "toolName": "cli_agent_graph_codex",
+      "lane": "proprietary",
+      "provider": "openai",
+      "modelEnv": "SMOKE_MODEL_CODEX"
+    },
+    {
+      "slug": "cursor",
+      "title": "Graph pack: Cursor",
+      "toolName": "cli_agent_graph_cursor",
+      "lane": "proprietary",
+      "provider": "openai",
+      "modelEnv": "SMOKE_MODEL_CURSOR"
+    },
+    {
+      "slug": "zai",
+      "title": "Graph pack: Z.ai",
+      "toolName": "cli_agent_graph_zai",
+      "lane": "proprietary",
+      "provider": "zai",
+      "modelEnv": "SMOKE_MODEL_ZAI"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+QUERY="${*:-}"
+if [ -z "$QUERY" ]; then
+  echo "usage: rag-search <query>" >&2
+  exit 2
+fi
+if command -v node >/dev/null 2>&1; then
+  exec node "$ROOT/rag-lib.mjs" search "$QUERY"
+fi
+if command -v python3 >/dev/null 2>&1; then
+  exec python3 "$ROOT/rag-lib.py" search "$QUERY"
+fi
+echo "rag-search: need node or python3 in the image" >&2
+exit 127
