@@ -1,0 +1,10 @@
+{
+  "id": "add-two",
+  "title": "Add-two tool + skill pack",
+  "description": "Exactly one tool (bin/add) and one skill (add-two) that requires using that tool for addition.",
+  "workspaceHost": "/var/lib/cli-agent/workspaces/add-two",
+  "workspaceContainer": "/workspace",
+  "tools": ["add"],
+  "skills": ["add-two"],
+  "note": "Tool is the workspace bin. Claude remaps add→Bash so the shell can run it. Empty tools/skills + empty workspace = no access."
+}

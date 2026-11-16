@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
+if ! command -v node >/dev/null 2>&1; then
+  echo "rag-mcp: need node in the image" >&2
+  exit 127
+fi
+exec node "$ROOT/rag-mcp.mjs"

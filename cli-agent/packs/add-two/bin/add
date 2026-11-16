@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+set -eu
+if [ "$#" -lt 2 ]; then
+  echo "usage: add <a> <b>" >&2
+  exit 2
+fi
+A="$1"
+B="$2"
+# integer or decimal via awk
+awk -v a="$A" -v b="$B" 'BEGIN { print a + b }'

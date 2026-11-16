@@ -143,6 +143,31 @@ services:
       EXECUTOR_TCP_PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
       PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
 
+  cli-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: cli-agent
+    image: ${CLI_AGENT_PLUGIN_IMAGE:-plugin-cli-agent:latest}
+    user: root
+    restart: unless-stopped
+    ports:
+      - '${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}:${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}'
+      - '${CLI_AGENT_A2A_PORT:-9419}:${CLI_AGENT_A2A_PORT:-9419}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${CLI_AGENT_WORKSPACE_ROOT:-/var/lib/cli-agent/workspaces}:${CLI_AGENT_WORKSPACE_ROOT:-/var/lib/cli-agent/workspaces}
+    environment:
+      <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${CLI_AGENT_PLUGIN_PULL_ADVERTISED_HOST:-cli-agent}
+      PLUGIN_TCP_PORT: ${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}
+      EXECUTOR_TCP_PORT: ${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}
+      PORT: ${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}
+      CLI_AGENT_WORKSPACE_ROOT: ${CLI_AGENT_WORKSPACE_ROOT:-/var/lib/cli-agent/workspaces}
+      DOCKER_SOCKET: /var/run/docker.sock
+      CLI_AGENT_A2A_PORT: ${CLI_AGENT_A2A_PORT:-9419}
+
   rag:
     build:
       context: .
