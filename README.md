@@ -44,13 +44,14 @@ docker compose -f compose.demo.yml up -d demo
 | [`rag/`](rag/) | RAG по документам: индекс, граф знаний и ask с проверкой фрагментов — [README](rag/README.md); композ [`compose.rag.yml`](compose.rag.yml) |
 | [`email/`](email/) | Исходящая почта (SMTP) — [README](email/README.md) |
 | [`office/`](office/) | Чтение и запись XLSX, CSV, DOCX — [README](office/README.md) |
+| [`execution/`](execution/) | Запуск кода, преобразование значения и одноразовый контейнер — [README](execution/README.md) |
 | [`plugin-build-tools/`](plugin-build-tools/) | Общие скрипты сборки (`esbuild`, обрезка `dist/`) |
 | [`compose.demo.yml`](compose.demo.yml) | Demo-ядро + jira, telegram, llm, caldav |
-| [`docker-compose.yml`](docker-compose.yml) | Все семь плагинов-пакетов для внешнего ядра |
+| [`docker-compose.yml`](docker-compose.yml) | Все восемь плагинов-пакетов для внешнего ядра |
 | [`Dockerfile.plugin`](Dockerfile.plugin) | Multi-stage образ одного плагина |
 | [`.cursor/skills/`](.cursor/skills/) | Agent skills для разработки и запуска |
 
-В [`compose.demo.yml`](compose.demo.yml) для quick start поднимаются **четыре** пакета из семи. Остальные подключаются через [`docker-compose.yml`](docker-compose.yml) или отдельный сервис по образцу `jira`.
+В [`compose.demo.yml`](compose.demo.yml) для quick start поднимаются **четыре** пакета из восьми. Остальные подключаются через [`docker-compose.yml`](docker-compose.yml) или отдельный сервис по образцу `jira`.
 
 ## Запуск с demo-образом
 
