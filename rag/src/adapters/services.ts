@@ -4,12 +4,14 @@ import { OpenAiCompatibleEmbedder } from './openai-embedder';
 import { OpenAiCompatibleLlmJson } from './openai-llm-json';
 import { OllamaReranker } from './ollama-reranker';
 import { FileOntologyStore } from './file-ontology-store';
+import { FileKnowledgeStore } from './file-knowledge-store';
 import { QdrantVectorIndex } from './qdrant-vector-index';
 import { Neo4jKnowledgeGraph } from './neo4j-knowledge-graph';
 import type {
   Chunker,
   DocumentParser,
   Embedder,
+  KnowledgeCanonStore,
   KnowledgeGraph,
   LlmJson,
   OntologyStore,
@@ -24,6 +26,8 @@ export type RagServices = {
   llm: LlmJson;
   reranker: Reranker;
   ontology: OntologyStore;
+  /** Durable S0/S2 (Evidence, Claim) under RAG_DATA_DIR. */
+  knowledge: KnowledgeCanonStore;
   vectors: VectorIndex;
   graph: KnowledgeGraph;
 };
@@ -39,6 +43,7 @@ export function getRagServices(): RagServices {
     llm: new OpenAiCompatibleLlmJson(),
     reranker: new OllamaReranker(),
     ontology: new FileOntologyStore(),
+    knowledge: new FileKnowledgeStore(),
     vectors: new QdrantVectorIndex(),
     graph: new Neo4jKnowledgeGraph(),
   };
