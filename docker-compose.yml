@@ -126,6 +126,23 @@ services:
       EXECUTOR_TCP_PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
       PORT: ${OFFICE_EXECUTOR_TCP_PORT:-9411}
 
+  document-rules:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: document-rules
+    image: ${DOCUMENT_RULES_PLUGIN_IMAGE:-plugin-document-rules:latest}
+    restart: unless-stopped
+    ports:
+      - '${DOCUMENT_RULES_EXECUTOR_TCP_PORT:-9412}:${DOCUMENT_RULES_EXECUTOR_TCP_PORT:-9412}'
+    environment:
+      <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${DOCUMENT_RULES_PLUGIN_PULL_ADVERTISED_HOST:-document-rules}
+      PLUGIN_TCP_PORT: ${DOCUMENT_RULES_EXECUTOR_TCP_PORT:-9412}
+      EXECUTOR_TCP_PORT: ${DOCUMENT_RULES_EXECUTOR_TCP_PORT:-9412}
+      PORT: ${DOCUMENT_RULES_EXECUTOR_TCP_PORT:-9412}
+
   caldav:
     build:
       context: .

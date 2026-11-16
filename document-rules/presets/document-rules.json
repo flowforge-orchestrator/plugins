@@ -1,0 +1,215 @@
+{
+  "id": "document-rules",
+  "version": 1,
+  "pluginId": "document-rules",
+  "metadata": {
+    "name": "Обработка документа",
+    "description": "Загрузка файла, зафиксированные правила, новый файл для скачивания."
+  },
+  "diagrams": [
+    {
+      "settings": {
+        "name": "Обработка документа",
+        "description": "Подтверждение принимает файл. Правила готовят новый текст. Запись кладёт его в файлы диаграммы, идентификатор уходит в результат запуска для скачивания.",
+        "triggers": [
+          {
+            "type": "manual"
+          }
+        ],
+        "isActive": false
+      },
+      "widgets": [
+        {
+          "id": "w-trigger",
+          "label": "Старт",
+          "position": { "x": 0, "y": 0 },
+          "source": {
+            "nodeType": "system.trigger.input",
+            "label": "Trigger Input"
+          },
+          "config": [],
+          "outputs": ["payload"]
+        },
+        {
+          "id": "w-validation",
+          "label": "Загрузка файла",
+          "position": { "x": 220, "y": 0 },
+          "source": {
+            "nodeType": "user.validation",
+            "label": "Валидатор"
+          },
+          "config": [
+            {
+              "name": "message",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": ["confirm", "attachment"]
+        },
+        {
+          "id": "w-read",
+          "label": "Чтение файла",
+          "position": { "x": 440, "y": 0 },
+          "source": {
+            "nodeType": "system.file.readText",
+            "label": "Чтение файла как текст"
+          },
+          "config": [
+            {
+              "name": "file",
+              "type": "file",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            }
+          ],
+          "outputs": ["content"]
+        },
+        {
+          "id": "w-rules",
+          "label": "Правила документа",
+          "position": { "x": 660, "y": 0 },
+          "source": {
+            "nodeType": "plugin.document-rules.apply",
+            "label": "Обработка документа"
+          },
+          "config": [
+            {
+              "name": "text",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "filename",
+              "type": "string",
+              "defaultValue": "document",
+              "isPort": false,
+              "canBePort": true
+            }
+          ],
+          "outputs": ["filename", "content", "file"]
+        },
+        {
+          "id": "w-write",
+          "label": "Новый файл",
+          "position": { "x": 880, "y": 0 },
+          "source": {
+            "nodeType": "system.file.write",
+            "label": "Запись в файл"
+          },
+          "config": [
+            {
+              "name": "path",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "content",
+              "type": "textarea",
+              "isPort": true,
+              "canBePort": true
+            },
+            {
+              "name": "contentEncoding",
+              "type": "string",
+              "defaultValue": "utf-8",
+              "isPort": false,
+              "canBePort": false
+            },
+            {
+              "name": "basePath",
+              "type": "string",
+              "defaultValue": "",
+              "isPort": false,
+              "canBePort": false
+            }
+          ],
+          "outputs": ["writtenPath", "status"]
+        },
+        {
+          "id": "w-output",
+          "label": "Файл на скачивание",
+          "position": { "x": 1100, "y": 0 },
+          "source": {
+            "nodeType": "system.output",
+            "label": "Output"
+          },
+          "config": [
+            {
+              "name": "fileId",
+              "type": "file",
+              "isPort": true,
+              "canBePort": true,
+              "isPrimary": true
+            },
+            {
+              "name": "filename",
+              "type": "string",
+              "isPort": true,
+              "canBePort": true
+            }
+          ],
+          "outputs": []
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "w-trigger",
+          "target": "w-validation",
+          "sourceHandle": "payload",
+          "targetHandle": "message"
+        },
+        {
+          "id": "e2",
+          "source": "w-validation",
+          "target": "w-read",
+          "sourceHandle": "attachment",
+          "targetHandle": "file"
+        },
+        {
+          "id": "e3",
+          "source": "w-read",
+          "target": "w-rules",
+          "sourceHandle": "content",
+          "targetHandle": "text"
+        },
+        {
+          "id": "e4",
+          "source": "w-rules",
+          "target": "w-write",
+          "sourceHandle": "content",
+          "targetHandle": "content"
+        },
+        {
+          "id": "e5",
+          "source": "w-rules",
+          "target": "w-write",
+          "sourceHandle": "filename",
+          "targetHandle": "path"
+        },
+        {
+          "id": "e6",
+          "source": "w-write",
+          "target": "w-output",
+          "sourceHandle": "writtenPath",
+          "targetHandle": "fileId"
+        },
+        {
+          "id": "e7",
+          "source": "w-rules",
+          "target": "w-output",
+          "sourceHandle": "filename",
+          "targetHandle": "filename"
+        }
+      ]
+    }
+  ]
+}
