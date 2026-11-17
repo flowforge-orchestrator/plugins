@@ -17,7 +17,8 @@
     "caldav",
     "rag",
     "execution",
-    "cli-agent"
+    "cli-agent",
+    "document-rules"
   ],
   "overrides": {
     "@kosolapus/plugin-ts-sdk": "0.0.10"
