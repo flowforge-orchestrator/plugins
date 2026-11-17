@@ -1,0 +1,86 @@
+{
+  "settings": {
+    "name": "__TITLE__",
+    "description": "Wave A CLI agent process with shared ports.",
+    "isActive": true,
+    "triggers": [
+      { "type": "manual" },
+      {
+        "type": "mcp_tool",
+        "toolName": "__TOOL_NAME__",
+        "description": "Run __TITLE__ with the shared CLI agent contract."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "trigger",
+      "nodeType": "system.trigger.input",
+      "outputs": [
+        "task",
+        "provider",
+        "model",
+        "baseUrl",
+        "timeoutMs",
+        "trigger"
+      ],
+      "config": [
+        { "name": "task", "defaultValue": "" },
+        { "name": "provider", "defaultValue": "ollama" },
+        { "name": "model", "defaultValue": "gemma4:12b-mlx" },
+        { "name": "baseUrl", "defaultValue": "http://host.docker.internal:11434/v1" },
+        { "name": "timeoutMs", "defaultValue": 600000 },
+        { "name": "trigger", "defaultValue": "" }
+      ]
+    },
+    {
+      "id": "agent",
+      "nodeType": "__NODE_TYPE__",
+      "label": "__TITLE__",
+      "config": [
+        { "name": "tools", "defaultValue": "", "isPort": false },
+        { "name": "skills", "defaultValue": "", "isPort": false },
+        { "name": "workspace", "defaultValue": "", "isPort": false }
+      ]
+    },
+    {
+      "id": "output",
+      "nodeType": "system.output",
+      "config": [
+        { "name": "text", "defaultValue": "" },
+        { "name": "stdout", "defaultValue": "" },
+        { "name": "stderr", "defaultValue": "" },
+        { "name": "truncated", "defaultValue": false },
+        { "name": "stdoutBytes", "defaultValue": 0 },
+        { "name": "stderrBytes", "defaultValue": 0 },
+        { "name": "exitCode", "defaultValue": 0 },
+        { "name": "status", "defaultValue": "" },
+        { "name": "usageKnown", "defaultValue": false },
+        { "name": "inputTokens", "defaultValue": "" },
+        { "name": "outputTokens", "defaultValue": "" },
+        { "name": "totalTokens", "defaultValue": "" },
+        { "name": "workspaceMounted", "defaultValue": false }
+      ]
+    }
+  ],
+  "edges": [
+    { "source": "trigger", "target": "agent", "sourceHandle": "task", "targetHandle": "task" },
+    { "source": "trigger", "target": "agent", "sourceHandle": "provider", "targetHandle": "provider" },
+    { "source": "trigger", "target": "agent", "sourceHandle": "model", "targetHandle": "model" },
+    { "source": "trigger", "target": "agent", "sourceHandle": "baseUrl", "targetHandle": "baseUrl" },
+    { "source": "trigger", "target": "agent", "sourceHandle": "timeoutMs", "targetHandle": "timeoutMs" },
+    { "source": "agent", "target": "output", "sourceHandle": "text", "targetHandle": "text" },
+    { "source": "agent", "target": "output", "sourceHandle": "stdout", "targetHandle": "stdout" },
+    { "source": "agent", "target": "output", "sourceHandle": "stderr", "targetHandle": "stderr" },
+    { "source": "agent", "target": "output", "sourceHandle": "truncated", "targetHandle": "truncated" },
+    { "source": "agent", "target": "output", "sourceHandle": "stdoutBytes", "targetHandle": "stdoutBytes" },
+    { "source": "agent", "target": "output", "sourceHandle": "stderrBytes", "targetHandle": "stderrBytes" },
+    { "source": "agent", "target": "output", "sourceHandle": "exitCode", "targetHandle": "exitCode" },
+    { "source": "agent", "target": "output", "sourceHandle": "status", "targetHandle": "status" },
+    { "source": "agent", "target": "output", "sourceHandle": "usageKnown", "targetHandle": "usageKnown" },
+    { "source": "agent", "target": "output", "sourceHandle": "inputTokens", "targetHandle": "inputTokens" },
+    { "source": "agent", "target": "output", "sourceHandle": "outputTokens", "targetHandle": "outputTokens" },
+    { "source": "agent", "target": "output", "sourceHandle": "totalTokens", "targetHandle": "totalTokens" },
+    { "source": "agent", "target": "output", "sourceHandle": "workspaceMounted", "targetHandle": "workspaceMounted" }
+  ]
+}

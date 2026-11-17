@@ -16,6 +16,8 @@
     "llm",
     "caldav",
     "rag",
+    "execution",
+    "cli-agent",
     "document-rules"
   ],
   "overrides": {

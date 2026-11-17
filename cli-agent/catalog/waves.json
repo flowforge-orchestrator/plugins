@@ -1,0 +1,233 @@
+{
+  "contract": "plugin.cli-agent.<slug> — shared ports task/provider/model/baseUrl/tools/skills/workspace/timeoutMs",
+  "waves": {
+    "A": {
+      "status": "shipped",
+      "agents": [
+        {
+          "slug": "hermes",
+          "displayName": "Hermes",
+          "headless": "hermes chat --oneshot -q"
+        },
+        {
+          "slug": "claude-code",
+          "displayName": "Claude Code",
+          "headless": "claude -p"
+        },
+        {
+          "slug": "codex",
+          "displayName": "Codex",
+          "headless": "codex exec"
+        },
+        {
+          "slug": "cursor",
+          "displayName": "Cursor",
+          "headless": "cursor-agent -p"
+        },
+        {
+          "slug": "aider",
+          "displayName": "Aider",
+          "headless": "aider --message"
+        },
+        {
+          "slug": "opencode",
+          "displayName": "OpenCode",
+          "headless": "opencode run"
+        },
+        {
+          "slug": "zai",
+          "displayName": "Z.ai",
+          "headless": "zcode -p"
+        }
+      ]
+    },
+    "B": {
+      "status": "shipped",
+      "note": "In combiner with empty tools/skills. Excluded: cline (arm64 bus error on bundled binary), openhands (pip package is agent-server only, no headless oneshot).",
+      "agents": [
+        {
+          "slug": "kilo",
+          "displayName": "Kilo Code",
+          "install": "npm i -g @kilocode/cli-linux-arm64",
+          "headless": "kilo run --pure --format json",
+          "status": "shipped"
+        },
+        {
+          "slug": "openclaw",
+          "displayName": "OpenClaw",
+          "install": "npm i -g openclaw@latest",
+          "headless": "openclaw agent --local --json -m",
+          "status": "shipped"
+        },
+        {
+          "slug": "cline",
+          "displayName": "Cline",
+          "install": "npm i -g cline",
+          "headless": "cline -y",
+          "status": "blocked_arm64_binary"
+        },
+        {
+          "slug": "pi",
+          "displayName": "pi (pi.dev)",
+          "install": "npm i -g @mariozechner/pi-coding-agent || npm i -g pi",
+          "headless": "pi -p --no-tools --no-skills --no-context-files",
+          "status": "shipped"
+        },
+        {
+          "slug": "openhands",
+          "displayName": "OpenHands",
+          "install": "pip install openhands-ai",
+          "headless": null,
+          "status": "blocked_no_headless"
+        },
+        {
+          "slug": "omp",
+          "displayName": "omp",
+          "headless": null,
+          "status": "research"
+        },
+        {
+          "slug": "goose",
+          "displayName": "goose",
+          "install": "https://github.com/block/goose/releases",
+          "headless": "goose run --no-session -t",
+          "status": "shipped"
+        },
+        {
+          "slug": "crush",
+          "displayName": "Crush",
+          "install": "https://github.com/charmbracelet/crush/releases",
+          "headless": "crush run --quiet -m",
+          "status": "shipped"
+        },
+        {
+          "slug": "qwen",
+          "displayName": "Qwen Code",
+          "install": "npm i -g @qwen-code/qwen-code",
+          "headless": "qwen -p",
+          "status": "shipped"
+        },
+        {
+          "slug": "junie",
+          "displayName": "Junie",
+          "headless": null,
+          "status": "research"
+        }
+      ]
+    },
+    "C": {
+      "status": "blocked_no_headless",
+      "note": "Adapter only after a public headless command is found",
+      "agents": [
+        {
+          "slug": "strix",
+          "displayName": "Strix"
+        },
+        {
+          "slug": "proto-agent",
+          "displayName": "Proto Agent"
+        },
+        {
+          "slug": "letta",
+          "displayName": "Letta"
+        },
+        {
+          "slug": "codegpt",
+          "displayName": "CodeGPT"
+        },
+        {
+          "slug": "digen",
+          "displayName": "Digen"
+        },
+        {
+          "slug": "trenzel",
+          "displayName": "Trenzel"
+        },
+        {
+          "slug": "rayline",
+          "displayName": "Rayline"
+        },
+        {
+          "slug": "joni",
+          "displayName": "JONI"
+        },
+        {
+          "slug": "mimocode",
+          "displayName": "mimocode"
+        },
+        {
+          "slug": "isdlc",
+          "displayName": "isdlc"
+        },
+        {
+          "slug": "ante",
+          "displayName": "Ante"
+        },
+        {
+          "slug": "traycer",
+          "displayName": "Traycer"
+        },
+        {
+          "slug": "kern",
+          "displayName": "Kern"
+        },
+        {
+          "slug": "nemo",
+          "displayName": "Nemo"
+        },
+        {
+          "slug": "pi-openrouter-plus",
+          "displayName": "pi-openrouter-plus"
+        },
+        {
+          "slug": "v12x",
+          "displayName": "V12X"
+        },
+        {
+          "slug": "jiuwen-swarm",
+          "displayName": "JiuwenSwarm"
+        },
+        {
+          "slug": "hax",
+          "displayName": "hax"
+        },
+        {
+          "slug": "postqode",
+          "displayName": "PostQode"
+        },
+        {
+          "slug": "codewhale",
+          "displayName": "Codewhale"
+        },
+        {
+          "slug": "minara",
+          "displayName": "Minara"
+        },
+        {
+          "slug": "ekko-studio",
+          "displayName": "Ekko Studio"
+        },
+        {
+          "slug": "penguin-harness",
+          "displayName": "PenguinHarness"
+        },
+        {
+          "slug": "vellum",
+          "displayName": "Vellum"
+        },
+        {
+          "slug": "atomcode",
+          "displayName": "AtomCode"
+        },
+        {
+          "slug": "gajae-code",
+          "displayName": "Gajae-Code"
+        },
+        {
+          "slug": "ailang",
+          "displayName": "AILANG"
+        }
+      ]
+    }
+  }
+}

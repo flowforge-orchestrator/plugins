@@ -1,4 +1,5 @@
 import type { GraphNodeHit } from '../graph/query/query.logic';
+import type { Claim, Evidence } from '../contracts/knowledge';
 import type {
   CanonicalEntity,
   DocBlock,
@@ -84,6 +85,14 @@ export interface OntologyStore {
     collectionId: string,
     entities: CanonicalEntity[],
   ): Promise<void>;
+}
+
+/** Durable S0 Evidence + S2 Claim canon under RAG_DATA_DIR. */
+export interface KnowledgeCanonStore {
+  listEvidence(collectionId: string): Promise<Evidence[]>;
+  saveEvidence(collectionId: string, evidence: Evidence[]): Promise<void>;
+  listClaims(collectionId: string): Promise<Claim[]>;
+  saveClaims(collectionId: string, claims: Claim[]): Promise<void>;
 }
 
 export interface VectorIndex {

@@ -1,0 +1,58 @@
+{
+  "hermes": {
+    "nodeType": "plugin.cli-agent.hermes",
+    "title": "Graph pack: Hermes",
+    "toolName": "cli_agent_graph_hermes",
+    "tools": "[\"skills\"]",
+    "skills": "[]",
+    "note": "prefetch-first; no terminal (blocks freestyle bin loops on MCQ)"
+  },
+  "claude-code": {
+    "nodeType": "plugin.cli-agent.claude-code",
+    "title": "Graph pack: Claude Code",
+    "toolName": "cli_agent_graph_claude_code",
+    "tools": "[\"Bash\",\"Read\",\"Glob\",\"Grep\"]",
+    "skills": "[\"/workspace/skills/graph-kg\",\"/workspace/skills/vector-search\"]",
+    "note": "Bash + skill dirs"
+  },
+  "opencode": {
+    "nodeType": "plugin.cli-agent.opencode",
+    "title": "Graph pack: OpenCode",
+    "toolName": "cli_agent_graph_opencode",
+    "tools": "[]",
+    "skills": "[]",
+    "note": "workspace --dir; prefetch context for tool-light path"
+  },
+  "cursor": {
+    "nodeType": "plugin.cli-agent.cursor",
+    "title": "Graph pack: Cursor",
+    "toolName": "cli_agent_graph_cursor",
+    "tools": "[]",
+    "skills": "[]",
+    "note": "real Cursor Agent CLI (cloud); local Ollama unsupported"
+  },
+  "aider": {
+    "nodeType": "plugin.cli-agent.aider",
+    "title": "Graph pack: Aider",
+    "toolName": "cli_agent_graph_aider",
+    "tools": "[]",
+    "skills": "[]",
+    "note": "no tools/skills filters; workspace bins via python"
+  },
+  "codex": {
+    "nodeType": "plugin.cli-agent.codex",
+    "title": "Graph pack: Codex",
+    "toolName": "cli_agent_graph_codex",
+    "tools": "[]",
+    "skills": "[]",
+    "note": "no tools/skills filters; workspace + prefetch"
+  },
+  "zai": {
+    "nodeType": "plugin.cli-agent.zai",
+    "title": "Graph pack: Z.ai",
+    "toolName": "cli_agent_graph_zai",
+    "tools": "[]",
+    "skills": "[]",
+    "note": "no tools/skills filters; workspace + prefetch"
+  }
+}

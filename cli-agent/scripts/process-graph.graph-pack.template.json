@@ -1,0 +1,403 @@
+{
+  "settings": {
+    "name": "__TITLE__",
+    "description": "Shared pack contract on trigger; prefetch chuk_i_gek into task; native tools/skills/workspace on the agent.",
+    "isActive": true,
+    "triggers": [
+      {
+        "type": "manual"
+      },
+      {
+        "type": "mcp_tool",
+        "toolName": "__TOOL_NAME__",
+        "description": "Run __TITLE__ with the shared graph-kg pack contract."
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "trigger",
+      "nodeType": "system.trigger.input",
+      "outputs": [
+        "task",
+        "provider",
+        "model",
+        "baseUrl",
+        "tools",
+        "skills",
+        "workspace",
+        "timeoutMs",
+        "trigger"
+      ],
+      "config": [
+        {
+          "name": "task",
+          "defaultValue": ""
+        },
+        {
+          "name": "provider",
+          "defaultValue": "ollama"
+        },
+        {
+          "name": "model",
+          "defaultValue": "gemma4:12b-mlx"
+        },
+        {
+          "name": "baseUrl",
+          "defaultValue": "http://host.docker.internal:11434/v1"
+        },
+        {
+          "name": "tools",
+          "defaultValue": "[\"graph\",\"ground_entities\",\"trace_relation\",\"search\",\"ontology\",\"inventory\",\"read_section\",\"normalize_ask\"]"
+        },
+        {
+          "name": "skills",
+          "defaultValue": "[\"graph-kg\",\"vector-search\"]"
+        },
+        {
+          "name": "workspace",
+          "defaultValue": "/var/lib/cli-agent/workspaces/graph-pack"
+        },
+        {
+          "name": "timeoutMs",
+          "defaultValue": 600000
+        },
+        {
+          "name": "trigger",
+          "defaultValue": ""
+        }
+      ]
+    },
+    {
+      "id": "clean_query",
+      "nodeType": "plugin.execution.code",
+      "label": "question for prefetch",
+      "config": [
+        {
+          "name": "language",
+          "defaultValue": "javascript",
+          "isPort": false
+        },
+        {
+          "name": "source",
+          "defaultValue": "const t = String(input ?? '');\nconst lines = t.split('\\n');\nlet q = t;\nfor (let i = 0; i < lines.length; i += 1) {\n  const l = String(lines[i] || '').trim();\n  if (!l) continue;\n  if (l.indexOf('?') >= 0) { q = l; break; }\n}\nreturn String(q).slice(0, 400);\n",
+          "isPort": false
+        },
+        {
+          "name": "timeoutMs",
+          "defaultValue": 1000,
+          "isPort": false
+        },
+        {
+          "name": "input",
+          "isPort": true
+        }
+      ]
+    },
+    {
+      "id": "prefetch",
+      "nodeType": "plugin.rag.search.query",
+      "label": "prefetch chuk_i_gek",
+      "config": [
+        {
+          "name": "collectionId",
+          "defaultValue": "chuk_i_gek",
+          "isPort": false
+        },
+        {
+          "name": "topK",
+          "defaultValue": 20,
+          "isPort": false
+        },
+        {
+          "name": "query",
+          "isPort": true
+        }
+      ]
+    },
+    {
+      "id": "make_template",
+      "nodeType": "plugin.execution.code",
+      "label": "task → template",
+      "config": [
+        {
+          "name": "language",
+          "defaultValue": "javascript",
+          "isPort": false
+        },
+        {
+          "name": "source",
+          "defaultValue": "const task = String(input ?? '');\nreturn [\n  'PROTOCOL (обязательно):',\n  '1) Ниже уже есть vector prefetch (## Контекст retrieval). Отвечай ТОЛЬКО по нему.',\n  '2) Не начинай проекты, git/npm/pip, правки файлов, side-quests.',\n  '3) Ответ — короткий: текст выбранного варианта или один факт. Без баннеров/resume.',\n  '4) Вызывай /workspace/bin/rag-search или /workspace/bin/rag-graph ТОЛЬКО если prefetch пуст или явно недостаточен.',\n  '5) Не выдумывай факты рассказа вне контекста/вывода bins.',\n  '',\n  '## Задача',\n  task,\n  '',\n  '## Контекст retrieval',\n  '{{context}}',\n].join('\\n');\n",
+          "isPort": false
+        },
+        {
+          "name": "timeoutMs",
+          "defaultValue": 2000,
+          "isPort": false
+        },
+        {
+          "name": "input",
+          "isPort": true
+        }
+      ]
+    },
+    {
+      "id": "slice_ctx",
+      "nodeType": "plugin.execution.code",
+      "label": "slice context",
+      "config": [
+        {
+          "name": "language",
+          "defaultValue": "javascript",
+          "isPort": false
+        },
+        {
+          "name": "source",
+          "defaultValue": "return String(input ?? '').slice(0, 12000);",
+          "isPort": false
+        },
+        {
+          "name": "timeoutMs",
+          "defaultValue": 1000,
+          "isPort": false
+        },
+        {
+          "name": "input",
+          "isPort": true
+        }
+      ]
+    },
+    {
+      "id": "ctx_vars",
+      "nodeType": "system.object.from",
+      "label": "vars {context}",
+      "config": [
+        {
+          "name": "key",
+          "defaultValue": "context",
+          "isPort": false
+        },
+        {
+          "name": "value",
+          "isPort": true
+        }
+      ]
+    },
+    {
+      "id": "enrich",
+      "nodeType": "system.string.template",
+      "label": "enrich task",
+      "config": [
+        {
+          "name": "template",
+          "isPort": true
+        },
+        {
+          "name": "vars",
+          "isPort": true
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "nodeType": "__NODE_TYPE__",
+      "label": "__TITLE__",
+      "config": [
+        {
+          "name": "task",
+          "isPort": true
+        },
+        {
+          "name": "provider",
+          "isPort": true
+        },
+        {
+          "name": "model",
+          "isPort": true
+        },
+        {
+          "name": "baseUrl",
+          "isPort": true
+        },
+        {
+          "name": "tools",
+          "isPort": false,
+          "defaultValue": "__TOOLS_JSON__"
+        },
+        {
+          "name": "skills",
+          "isPort": false,
+          "defaultValue": "__SKILLS_JSON__"
+        },
+        {
+          "name": "workspace",
+          "isPort": false,
+          "defaultValue": "/var/lib/cli-agent/workspaces/graph-pack"
+        },
+        {
+          "name": "timeoutMs",
+          "isPort": true
+        },
+        {
+          "name": "apiKey",
+          "isPort": false,
+          "defaultValue": "CLI_AGENT_API_KEY",
+          "type": "ref"
+        }
+      ]
+    },
+    {
+      "id": "output",
+      "nodeType": "system.output",
+      "config": [
+        { "name": "text", "isPort": true, "defaultValue": "" },
+        { "name": "stdout", "isPort": true, "defaultValue": "" },
+        { "name": "stderr", "isPort": true, "defaultValue": "" },
+        { "name": "truncated", "isPort": true, "defaultValue": false },
+        { "name": "stdoutBytes", "isPort": true, "defaultValue": 0 },
+        { "name": "stderrBytes", "isPort": true, "defaultValue": 0 },
+        { "name": "exitCode", "isPort": true, "defaultValue": 0 },
+        { "name": "status", "isPort": true, "defaultValue": "" },
+        { "name": "usageKnown", "isPort": true, "defaultValue": false },
+        { "name": "inputTokens", "isPort": true, "defaultValue": "" },
+        { "name": "outputTokens", "isPort": true, "defaultValue": "" },
+        { "name": "totalTokens", "isPort": true, "defaultValue": "" },
+        { "name": "workspaceMounted", "isPort": true, "defaultValue": false }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "trigger",
+      "target": "clean_query",
+      "sourceHandle": "task",
+      "targetHandle": "input"
+    },
+    {
+      "source": "clean_query",
+      "target": "prefetch",
+      "sourceHandle": "value",
+      "targetHandle": "query"
+    },
+    {
+      "source": "trigger",
+      "target": "make_template",
+      "sourceHandle": "task",
+      "targetHandle": "input"
+    },
+    {
+      "source": "prefetch",
+      "target": "slice_ctx",
+      "sourceHandle": "context",
+      "targetHandle": "input"
+    },
+    {
+      "source": "slice_ctx",
+      "target": "ctx_vars",
+      "sourceHandle": "value",
+      "targetHandle": "value"
+    },
+    {
+      "source": "make_template",
+      "target": "enrich",
+      "sourceHandle": "value",
+      "targetHandle": "template"
+    },
+    {
+      "source": "ctx_vars",
+      "target": "enrich",
+      "sourceHandle": "object",
+      "targetHandle": "vars"
+    },
+    {
+      "source": "enrich",
+      "target": "agent",
+      "sourceHandle": "string",
+      "targetHandle": "task"
+    },
+    {
+      "source": "trigger",
+      "target": "agent",
+      "sourceHandle": "provider",
+      "targetHandle": "provider"
+    },
+    {
+      "source": "trigger",
+      "target": "agent",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "source": "trigger",
+      "target": "agent",
+      "sourceHandle": "baseUrl",
+      "targetHandle": "baseUrl"
+    },
+    {
+      "source": "trigger",
+      "target": "agent",
+      "sourceHandle": "timeoutMs",
+      "targetHandle": "timeoutMs"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "text",
+      "targetHandle": "text"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "stdout",
+      "targetHandle": "stdout"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "stderr",
+      "targetHandle": "stderr"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "truncated",
+      "targetHandle": "truncated"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "stdoutBytes",
+      "targetHandle": "stdoutBytes"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "stderrBytes",
+      "targetHandle": "stderrBytes"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "exitCode",
+      "targetHandle": "exitCode"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "status",
+      "targetHandle": "status"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "usageKnown",
+      "targetHandle": "usageKnown"
+    },
+    {
+      "source": "agent",
+      "target": "output",
+      "sourceHandle": "workspaceMounted",
+      "targetHandle": "workspaceMounted"
+    }
+  ]
+}

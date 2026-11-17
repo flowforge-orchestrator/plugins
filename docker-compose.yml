@@ -160,6 +160,31 @@ services:
       EXECUTOR_TCP_PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
       PORT: ${CALDAV_EXECUTOR_TCP_PORT:-9413}
 
+  cli-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: cli-agent
+    image: ${CLI_AGENT_PLUGIN_IMAGE:-plugin-cli-agent:latest}
+    user: root
+    restart: unless-stopped
+    ports:
+      - '${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}:${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}'
+      - '${CLI_AGENT_A2A_PORT:-9419}:${CLI_AGENT_A2A_PORT:-9419}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${CLI_AGENT_WORKSPACE_ROOT:-/var/lib/cli-agent/workspaces}:${CLI_AGENT_WORKSPACE_ROOT:-/var/lib/cli-agent/workspaces}
+    environment:
+      <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${CLI_AGENT_PLUGIN_PULL_ADVERTISED_HOST:-cli-agent}
+      PLUGIN_TCP_PORT: ${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}
+      EXECUTOR_TCP_PORT: ${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}
+      PORT: ${CLI_AGENT_EXECUTOR_TCP_PORT:-9416}
+      CLI_AGENT_WORKSPACE_ROOT: ${CLI_AGENT_WORKSPACE_ROOT:-/var/lib/cli-agent/workspaces}
+      DOCKER_SOCKET: /var/run/docker.sock
+      CLI_AGENT_A2A_PORT: ${CLI_AGENT_A2A_PORT:-9419}
+
   rag:
     build:
       context: .
@@ -187,6 +212,26 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+
+  execution:
+    build:
+      context: .
+      dockerfile: Dockerfile.plugin
+      args:
+        PLUGIN_DIR: execution
+    image: ${EXECUTION_PLUGIN_IMAGE:-plugin-execution:latest}
+    user: root
+    restart: unless-stopped
+    ports:
+      - '${EXECUTION_EXECUTOR_TCP_PORT:-9415}:${EXECUTION_EXECUTOR_TCP_PORT:-9415}'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      <<: *plugin-env
+      PLUGIN_PULL_ADVERTISED_HOST: ${EXECUTION_PLUGIN_PULL_ADVERTISED_HOST:-execution}
+      PLUGIN_TCP_PORT: ${EXECUTION_EXECUTOR_TCP_PORT:-9415}
+      EXECUTOR_TCP_PORT: ${EXECUTION_EXECUTOR_TCP_PORT:-9415}
+      PORT: ${EXECUTION_EXECUTOR_TCP_PORT:-9415}
 
 # Full RAG stack with stores: use compose.rag.yml (preferred for local demo).
 
